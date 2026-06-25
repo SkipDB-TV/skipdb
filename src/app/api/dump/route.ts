@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { segments, titles } from "@/db/schema";
-import { json, preflight } from "@/lib/api";
+import { json, apiError, preflight } from "@/lib/api";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { eq } from "drizzle-orm";
 import { msToSec } from "@/lib/time";
 
@@ -19,7 +20,12 @@ export function OPTIONS() {
  * downloadable mirror (and CSV variant) is on the roadmap; the schema is built
  * so this stays a clean PII-free query.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  // The dump is a heavy full-table read; cap how often a client can pull it.
+  const rl = rateLimit(`dump:${clientIp(req)}`, 6);
+  if (!rl.ok)
+    return apiError("Rate limit exceeded. The dump is cached for an hour.", 429);
+
   const rows = await db
     .select({
       imdb_id: segments.imdbId,

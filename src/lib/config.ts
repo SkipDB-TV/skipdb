@@ -39,6 +39,9 @@ export const config = {
     // Read/write rate limits (requests per window).
     readPerMinute: 120,
     writePerMinute: 30,
+    // Tighter limit for endpoints that proxy a third-party metadata provider
+    // (TMDB/TVDB), to protect the shared server API key from abuse.
+    metadataPerMinute: 30,
     rateWindowMs: 60_000,
   },
 

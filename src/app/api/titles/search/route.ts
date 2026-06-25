@@ -2,6 +2,8 @@ import { db } from "@/db";
 import { titles } from "@/db/schema";
 import { json, apiError, preflight } from "@/lib/api";
 import { searchTitles, findByImdb, tmdbEnabled } from "@/lib/tmdb";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { config } from "@/lib/config";
 import { ilike, or } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -15,6 +17,10 @@ export function OPTIONS() {
  * returns local matches (titles we already have data for).
  */
 export async function GET(req: Request) {
+  // Tighter limit: this proxies the shared TMDB key.
+  const rl = rateLimit(`search:${clientIp(req)}`, config.limits.metadataPerMinute);
+  if (!rl.ok) return apiError("Rate limit exceeded", 429);
+
   const url = new URL(req.url);
   const q = url.searchParams.get("q")?.trim();
   if (!q) return apiError("q (query) is required", 400);
