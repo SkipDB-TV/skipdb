@@ -1,0 +1,56 @@
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { json, apiError } from "@/lib/api";
+import { registerSchema } from "@/lib/validation";
+import { hashPassword } from "@/lib/password";
+import { createUserSession } from "@/lib/session";
+import { isAdminEmail } from "@/lib/admin-emails";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
+
+export async function POST(req: Request) {
+  const rl = rateLimit(`register:${clientIp(req)}`, 10);
+  if (!rl.ok) return apiError("Too many attempts. Try again shortly.", 429);
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return apiError("Invalid JSON body", 400);
+  }
+
+  const parsed = registerSchema.safeParse(body);
+  if (!parsed.success) {
+    return apiError("Validation failed", 422, {
+      issues: parsed.error.issues.map((i) => i.message),
+    });
+  }
+  const { email, password, name } = parsed.data;
+
+  const existing = (
+    await db.select().from(users).where(eq(users.email, email))
+  )[0];
+  if (existing) {
+    return apiError(
+      "An account with that email already exists. Try signing in instead.",
+      409,
+    );
+  }
+
+  const passwordHash = await hashPassword(password);
+  const [created] = await db
+    .insert(users)
+    .values({
+      email,
+      name: name ?? email.split("@")[0],
+      passwordHash,
+      emailVerified: null,
+      role: isAdminEmail(email) ? "admin" : "user",
+    })
+    .returning();
+
+  await createUserSession(created.id);
+  return json({ ok: true, user: { email: created.email } }, { status: 201 });
+}

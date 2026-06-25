@@ -1,0 +1,195 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getTitleOverview } from "@/lib/coverage";
+import { loadPanelSegments } from "@/lib/panel";
+import { auth } from "@/lib/auth";
+import { SegmentPanel } from "@/components/SegmentPanel";
+import { Timeline } from "@/components/Timeline";
+import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
+import type { SegmentTypeName } from "@/lib/config";
+
+export const dynamic = "force-dynamic";
+
+export default async function TitlePage({
+  params,
+}: {
+  params: Promise<{ imdbId: string }>;
+}) {
+  const { imdbId } = await params;
+  const id = imdbId.toLowerCase();
+  if (!/^tt\d{6,10}$/.test(id)) notFound();
+
+  const overview = await getTitleOverview(id);
+  const session = await auth();
+  const { title } = overview;
+
+  return (
+    <div className="container-page py-10">
+      {/* Header */}
+      <div className="flex flex-col gap-6 sm:flex-row">
+        <div className="aspect-[2/3] w-36 shrink-0 overflow-hidden rounded-xl bg-midnight-800 shadow-card">
+          {title.posterUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={title.posterUrl}
+              alt={title.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="grid h-full place-items-center text-5xl text-slate-700">
+              ⏭
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-white">{title.name}</h1>
+            <span className="chip border border-white/10 bg-white/5 capitalize text-slate-300">
+              {title.mediaType}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            {title.year ?? ""} · <span className="mono">{title.imdbId}</span>
+          </p>
+          {title.overview && (
+            <p className="mt-3 max-w-2xl text-sm text-slate-300">
+              {title.overview}
+            </p>
+          )}
+          <div className="mt-4 flex gap-4 text-sm">
+            <span className="text-slate-300">
+              <strong className="text-skip">{overview.totals.approved}</strong>{" "}
+              approved
+            </span>
+            <span className="text-slate-300">
+              <strong className="text-warn">{overview.totals.pending}</strong>{" "}
+              pending
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-10">
+        {overview.isMovie ? (
+          <MovieBody imdbId={id} userId={session?.user?.id} />
+        ) : (
+          <SeriesBody overview={overview} imdbId={id} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+async function MovieBody({
+  imdbId,
+  userId,
+}: {
+  imdbId: string;
+  userId?: string;
+}) {
+  const initial = await loadPanelSegments({
+    imdbId,
+    season: null,
+    episode: null,
+    userId,
+  });
+  return (
+    <div className="space-y-6">
+      <Timeline
+        segments={initial.filter((s) => s.status === "approved")}
+        durationMs={initial.find((s) => s.durationMs)?.durationMs ?? null}
+      />
+      <SegmentPanel
+        imdbId={imdbId}
+        season={null}
+        episode={null}
+        defaultDurationMs={null}
+        initial={initial}
+        isAuthed={Boolean(userId)}
+      />
+    </div>
+  );
+}
+
+function SeriesBody({
+  overview,
+  imdbId,
+}: {
+  overview: Awaited<ReturnType<typeof getTitleOverview>>;
+  imdbId: string;
+}) {
+  const seasons =
+    overview.seasons.length > 0
+      ? overview.seasons
+      : [
+          ...new Set(
+            overview.episodes
+              .map((e) => e.season)
+              .filter((s): s is number => s != null),
+          ),
+        ].sort((a, b) => a - b);
+
+  return (
+    <div className="space-y-10">
+      {seasons.map((season) => {
+        const eps = overview.episodes.filter((e) => e.season === season);
+        if (eps.length === 0) return null;
+        return (
+          <section key={season}>
+            <h2 className="mb-3 text-lg font-semibold text-white">
+              Season {season}
+            </h2>
+            <div className="grid gap-2">
+              {eps.map((ep) => (
+                <Link
+                  key={`${ep.season}-${ep.episode}`}
+                  href={`/title/${imdbId}/${ep.season}/${ep.episode}`}
+                  className="card flex items-center justify-between gap-4 p-4 transition hover:shadow-glow"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="mono shrink-0 text-sm text-slate-500">
+                      S{String(ep.season).padStart(2, "0")}E
+                      {String(ep.episode).padStart(2, "0")}
+                    </span>
+                    <span className="truncate text-sm text-white">
+                      {ep.name ?? "Episode"}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 gap-1.5">
+                    {SEGMENT_ORDER.map((t) => (
+                      <CoverageDot
+                        key={t}
+                        type={t}
+                        cov={ep.coverage[t]}
+                      />
+                    ))}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function CoverageDot({
+  type,
+  cov,
+}: {
+  type: SegmentTypeName;
+  cov?: { approved: number; pending: number };
+}) {
+  const meta = SEGMENT_META[type];
+  const has = cov && cov.approved > 0;
+  const pending = cov && cov.pending > 0 && !has;
+  return (
+    <span
+      title={`${meta.label}: ${cov?.approved ?? 0} approved, ${cov?.pending ?? 0} pending`}
+      className={`h-2.5 w-2.5 rounded-full ${
+        has ? meta.ring : pending ? "bg-warn/60" : "bg-white/10"
+      }`}
+    />
+  );
+}

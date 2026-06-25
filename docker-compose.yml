@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: skipdb-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: skipdb
+      POSTGRES_PASSWORD: skipdb
+      POSTGRES_DB: skipdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - skipdb_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skipdb -d skipdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  skipdb_pgdata:
