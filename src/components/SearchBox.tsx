@@ -26,7 +26,6 @@ export function SearchBox({
       className="flex w-full gap-2"
     >
       <input
-        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
         value={q}
         onChange={(e) => setQ(e.target.value)}

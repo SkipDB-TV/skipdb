@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { msToClock, msToSec, parseTimeToMs } from "@/lib/time";
 import { SEGMENT_META, SEGMENT_ORDER } from "@/lib/segment-types";
@@ -54,10 +54,14 @@ export function SegmentPanel({
   const [segments, setSegments] = useState(initial);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Keep in sync when the server re-sends data (e.g. after router.refresh()).
-  useEffect(() => {
+  // Re-sync local state when the server re-sends data (e.g. after
+  // router.refresh()). React's "adjust state during render" pattern — not an
+  // effect — so a fresh `initial` reference immediately replaces local edits.
+  const [seenInitial, setSeenInitial] = useState(initial);
+  if (initial !== seenInitial) {
+    setSeenInitial(initial);
     setSegments(initial);
-  }, [initial]);
+  }
 
   async function vote(id: number, value: number) {
     if (!isAuthed) {

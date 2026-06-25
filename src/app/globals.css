@@ -1,6 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Keep using the existing JS theme (colors, fonts, shadows) under Tailwind v4. */
+@config "../../tailwind.config.ts";
 
 :root {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
@@ -33,6 +34,13 @@
   }
 }
 
+/* Tailwind v4: shared button base is a real @utility so it can be @applied. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
+    text-sm font-medium transition focus:outline-none focus:ring-2
+    focus:ring-skip/50 disabled:opacity-50 disabled:pointer-events-none;
+}
+
 @layer components {
   .container-page {
     @apply mx-auto w-full max-w-6xl px-5;
@@ -40,11 +48,6 @@
   .card {
     @apply rounded-2xl border border-white/5 bg-midnight-900/70 backdrop-blur
       shadow-card;
-  }
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
-      text-sm font-medium transition focus:outline-none focus:ring-2
-      focus:ring-skip/50 disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-primary {
     @apply btn bg-skip text-midnight-950 hover:bg-skip-bright;
