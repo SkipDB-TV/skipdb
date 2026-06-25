@@ -14,6 +14,7 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "dev:keys": "tsx scripts/make-test-keys.ts",
+    "db:resolve": "tsx scripts/backfill-resolved.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

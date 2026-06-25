@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { config } from "./config";
-import { parseTimeToMs } from "./time";
+import { parseTimeToMs, roundTime } from "./time";
 
 export const imdbIdSchema = z
   .string()
@@ -32,12 +32,9 @@ export const submitSchema = z
     duration_ms: z.number().optional(),
     duration_sec: flexibleTime.optional(),
 
-    agree_terms: z.literal(true, {
-      errorMap: () => ({
-        message:
-          "You must agree to publish your contribution under CC BY-NC-SA 4.0.",
-      }),
-    }),
+    // Submitting implies agreement to publish under CC BY-NC-SA 4.0 (see /terms);
+    // accepted for backwards-compatibility but no longer required.
+    agree_terms: z.boolean().optional(),
   })
   .transform((data, ctx) => {
     const startMs = data.start_ms ?? parseTimeToMs(data.start_sec);
@@ -66,9 +63,10 @@ export const submitSchema = z
       segmentType: data.segment_type,
       season: data.season ?? null,
       episode: data.episode ?? null,
-      startMs: Math.round(startMs),
-      endMs: Math.round(endMs),
-      durationMs: durationMs != null ? Math.round(durationMs) : null,
+      // Stored at one decimal place of seconds (100 ms granularity).
+      startMs: roundTime(startMs),
+      endMs: roundTime(endMs),
+      durationMs: durationMs != null ? roundTime(durationMs) : null,
     };
   });
 
@@ -93,6 +91,18 @@ export function validateSegmentBounds(input: {
   return null;
 }
 
+/** Partial edit of an existing segment; omitted fields keep their value. */
+export const editSchema = z.object({
+  segment_type: segmentTypeSchema.optional(),
+  start_ms: z.number().optional(),
+  end_ms: z.number().optional(),
+  start_sec: flexibleTime.optional(),
+  end_sec: flexibleTime.optional(),
+  duration_ms: z.number().optional(),
+  duration_sec: flexibleTime.optional(),
+  clear_duration: z.boolean().optional(),
+});
+
 export const voteSchema = z.object({
   value: z.union([
     z.literal(1),
@@ -108,6 +118,11 @@ export const searchSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   password: z.string().min(1, "Password is required"),
+});
+
+export const profileSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(80),
+  email: z.string().trim().toLowerCase().email("Enter a valid email address"),
 });
 
 export const registerSchema = z.object({

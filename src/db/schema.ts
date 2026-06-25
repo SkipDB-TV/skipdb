@@ -11,6 +11,7 @@ import {
   index,
   jsonb,
   serial,
+  real,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -106,8 +107,10 @@ export const apiKeys = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    // sha-256 hash of the full key; the plaintext is only shown once at creation
+    // sha-256 hash of the full key, used for constant-time lookup
     keyHash: text("key_hash").notNull().unique(),
+    // AES-256-GCM ciphertext of the full key so the owner can reveal it again
+    keyCipher: text("key_cipher"),
     // short non-secret prefix shown in the UI to identify the key (e.g. skdb_a1b2)
     keyPrefix: text("key_prefix").notNull(),
     revoked: boolean("revoked").notNull().default(false),
@@ -221,6 +224,48 @@ export const segments = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Resolved segments — denormalized "decided" best segment per (episode, type).
+// This is the deduped view the public API serves for the common no-duration
+// read: one O(1) indexed lookup instead of scanning every submission. It is
+// recomputed whenever the underlying approved set for an episode+type changes
+// (submit/approve/reject/vote). Bounded to <= 4 rows per episode, so it lives
+// in Postgres (persistent + consistent across instances) rather than memory.
+// ---------------------------------------------------------------------------
+
+export const resolvedSegments = pgTable(
+  "resolved_segments",
+  {
+    id: serial("id").primaryKey(),
+    imdbId: text("imdb_id").notNull(),
+    titleId: integer("title_id")
+      .notNull()
+      .references(() => titles.id, { onDelete: "cascade" }),
+    season: integer("season"),
+    episode: integer("episode"),
+    segmentType: segmentType("segment_type").notNull(),
+    // the winning submission
+    segmentId: integer("segment_id")
+      .notNull()
+      .references(() => segments.id, { onDelete: "cascade" }),
+    startMs: bigint("start_ms", { mode: "number" }).notNull(),
+    endMs: bigint("end_ms", { mode: "number" }).notNull(),
+    durationMs: bigint("duration_ms", { mode: "number" }),
+    votesUp: integer("votes_up").notNull().default(0),
+    votesDown: integer("votes_down").notNull().default(0),
+    score: integer("score").notNull().default(0),
+    confidence: real("confidence").notNull().default(0.5),
+    updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => ({
+    lookup: index("resolved_lookup_idx").on(
+      table.imdbId,
+      table.season,
+      table.episode,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // Votes — one per (segment, user). Aggregates kept on segments for fast reads.
 // ---------------------------------------------------------------------------
 
@@ -300,3 +345,4 @@ export type Episode = typeof episodes.$inferSelect;
 export type Segment = typeof segments.$inferSelect;
 export type Vote = typeof votes.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
+export type ResolvedSegment = typeof resolvedSegments.$inferSelect;

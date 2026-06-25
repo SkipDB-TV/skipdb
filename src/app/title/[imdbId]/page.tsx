@@ -5,6 +5,7 @@ import { loadPanelSegments } from "@/lib/panel";
 import { auth } from "@/lib/auth";
 import { SegmentPanel } from "@/components/SegmentPanel";
 import { Timeline } from "@/components/Timeline";
+import { ApiLink } from "@/components/ApiLink";
 import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
 import type { SegmentTypeName } from "@/lib/config";
 
@@ -95,6 +96,9 @@ async function MovieBody({
   });
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <ApiLink imdbId={imdbId} />
+      </div>
       <Timeline
         segments={initial.filter((s) => s.status === "approved")}
         durationMs={initial.find((s) => s.durationMs)?.durationMs ?? null}
@@ -141,12 +145,14 @@ function SeriesBody({
             </h2>
             <div className="grid gap-2">
               {eps.map((ep) => (
-                <Link
+                <div
                   key={`${ep.season}-${ep.episode}`}
-                  href={`/title/${imdbId}/${ep.season}/${ep.episode}`}
                   className="card flex items-center justify-between gap-4 p-4 transition hover:shadow-glow"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <Link
+                    href={`/title/${imdbId}/${ep.season}/${ep.episode}`}
+                    className="flex min-w-0 flex-1 items-center gap-3"
+                  >
                     <span className="mono shrink-0 text-sm text-slate-500">
                       S{String(ep.season).padStart(2, "0")}E
                       {String(ep.episode).padStart(2, "0")}
@@ -154,17 +160,21 @@ function SeriesBody({
                     <span className="truncate text-sm text-white">
                       {ep.name ?? "Episode"}
                     </span>
+                  </Link>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex gap-1.5">
+                      {SEGMENT_ORDER.map((t) => (
+                        <CoverageDot key={t} type={t} cov={ep.coverage[t]} />
+                      ))}
+                    </div>
+                    <ApiLink
+                      imdbId={imdbId}
+                      season={ep.season}
+                      episode={ep.episode}
+                      variant="inline"
+                    />
                   </div>
-                  <div className="flex shrink-0 gap-1.5">
-                    {SEGMENT_ORDER.map((t) => (
-                      <CoverageDot
-                        key={t}
-                        type={t}
-                        cov={ep.coverage[t]}
-                      />
-                    ))}
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
           </section>

@@ -24,17 +24,30 @@ can never be quietly locked away or sold off.
 ## Features
 
 - Contribute **intro / recap / outro / preview** timestamps keyed by **IMDb ID** (movies + TV).
-- Time stored in **milliseconds**, returned in **both seconds and milliseconds**.
+- Time stored in **milliseconds** at **0.1s precision** (finer is pointless for skipping),
+  returned in **both seconds and milliseconds**.
+- The read API returns the **single best result per type** as a top-level object
+  (`segments: { intro, recap, outro, preview }`, each the best match or `null`).
+- A denormalized **resolved_segments** table holds the pre-decided best per episode/type, so the
+  common no-duration read is one indexed lookup; duration-aware matching falls back to the small
+  per-episode set. (Kept in Postgres, not Redis — it's bounded and benefits from persistence +
+  multi-instance consistency.)
 - Optional **stream duration** per submission so different streams (Netflix vs Blu-ray rip, etc.)
   can be compared — with a **smart offset shift**: if the requested stream is ~Ns longer than the
   stored one, SkipDB assumes an extra logo/scene at the start and shifts timestamps by N seconds.
 - **Logged-in accounts** — email + password, GitHub / Google OAuth, or email magic link — plus
-  **personal API keys** (generate / reset). Email/password works out of the box with no external
-  setup.
+  **personal API keys** (generate / reset / reveal with show-hide + copy). Email/password works out
+  of the box with no external setup. Non-social users can edit their name and email.
 - **Smart auto-approval**: submissions that match the established pattern for a show, reach
   consensus, or come from trusted users go live immediately; the rest enter a **review queue**.
-- **Admin interface** for approve / reject with an audit log.
+- **Admin interface** for approve / reject with an audit log, and a **context-rich review queue**
+  (submitter track record, existing data for the episode and how it compares, the show's usual
+  segment length, and whether a stream duration was provided and how it lines up).
 - **Community voting** (good / bad skip) that scores and ranks segments.
+- **Edit & delete your own submissions** — edits are re-reviewed, so a segment that no longer fits
+  the show's pattern returns to the queue even if it was previously approved.
+- **Browse** the most-covered titles, jump to any episode's JSON via a one-click API link, and get
+  live seconds⇄`mm:ss` hints while entering times.
 - **Open reading** with reasonable rate limits.
 
 ## Quick start
@@ -93,7 +106,7 @@ curl -X POST http://localhost:3000/api/segments \
   -H "Authorization: Bearer skdb_xxx" \
   -H "Content-Type: application/json" \
   -d '{"imdb_id":"tt0903747","season":1,"episode":1,"segment_type":"intro",
-       "start_ms":61000,"end_ms":91000,"duration_ms":1412000,"agree_terms":true}'
+       "start_ms":61000,"end_ms":91000,"duration_ms":1412000}'
 ```
 
 `start`/`end` also accept seconds or clock strings (`mm:ss`, `hh:mm:ss`) via `start_sec`/`end_sec`.

@@ -11,6 +11,8 @@ interface KeyInfo {
 export function ApiKeyManager({ initial }: { initial: KeyInfo | null }) {
   const [info, setInfo] = useState<KeyInfo | null>(initial);
   const [plaintext, setPlaintext] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function generate() {
@@ -25,6 +27,7 @@ export function ApiKeyManager({ initial }: { initial: KeyInfo | null }) {
       const data = await res.json();
       if (res.ok) {
         setPlaintext(data.key);
+        setRevealed(true);
         setInfo({
           keyPrefix: data.prefix,
           createdAt: new Date().toISOString(),
@@ -36,6 +39,33 @@ export function ApiKeyManager({ initial }: { initial: KeyInfo | null }) {
     }
   }
 
+  async function toggleReveal() {
+    if (revealed) {
+      setRevealed(false);
+      return;
+    }
+    if (!plaintext) {
+      const res = await fetch("/api/keys/reveal");
+      if (!res.ok) return;
+      const data = await res.json();
+      setPlaintext(data.key);
+    }
+    setRevealed(true);
+  }
+
+  async function copy() {
+    let value = plaintext;
+    if (!value) {
+      const res = await fetch("/api/keys/reveal");
+      if (!res.ok) return;
+      value = (await res.json()).key;
+      setPlaintext(value);
+    }
+    await navigator.clipboard.writeText(value!);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   async function revoke() {
     if (!confirm("Revoke your API key? It will stop working immediately."))
       return;
@@ -45,11 +75,14 @@ export function ApiKeyManager({ initial }: { initial: KeyInfo | null }) {
       if (res.ok) {
         setInfo(null);
         setPlaintext(null);
+        setRevealed(false);
       }
     } finally {
       setBusy(false);
     }
   }
+
+  const masked = info ? `${info.keyPrefix}${"•".repeat(28)}` : "";
 
   return (
     <div className="card space-y-4 p-6">
@@ -66,25 +99,34 @@ export function ApiKeyManager({ initial }: { initial: KeyInfo | null }) {
         key.
       </p>
 
-      {plaintext && (
-        <div className="rounded-xl border border-skip/30 bg-skip/10 p-4">
-          <p className="text-xs text-skip-bright">
-            Copy this now — it won&apos;t be shown again:
-          </p>
-          <code className="mono mt-1 block break-all text-sm text-white">
-            {plaintext}
-          </code>
-        </div>
-      )}
-
       {info ? (
-        <div className="text-sm text-slate-400">
-          Key{" "}
-          <span className="mono text-slate-200">{info.keyPrefix}…</span>
-          {info.lastUsedAt
-            ? ` · last used ${new Date(info.lastUsedAt).toLocaleString()}`
-            : " · never used"}
-        </div>
+        <>
+          <div className="flex items-stretch gap-2">
+            <code className="mono flex-1 truncate rounded-xl border border-white/10 bg-midnight-850 px-3 py-2.5 text-sm text-white">
+              {revealed && plaintext ? plaintext : masked}
+            </code>
+            <button
+              type="button"
+              className="btn-ghost shrink-0"
+              onClick={toggleReveal}
+            >
+              {revealed ? "Hide" : "Show"}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost shrink-0"
+              onClick={copy}
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+          <p className="text-xs text-slate-500">
+            Created {new Date(info.createdAt).toLocaleDateString()}
+            {info.lastUsedAt
+              ? ` · last used ${new Date(info.lastUsedAt).toLocaleString()}`
+              : " · never used"}
+          </p>
+        </>
       ) : (
         <p className="text-sm text-slate-500">No active key.</p>
       )}

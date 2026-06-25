@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { db } from "@/db";
 import { apiKeys, users } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { encryptSecret, decryptSecret } from "./crypto";
 
 const PREFIX = "skdb_";
 
@@ -10,8 +11,9 @@ export function hashKey(plaintext: string): string {
 }
 
 /**
- * Generate a new API key for a user, revoking any previous active key.
- * Returns the plaintext key ONCE — it is never stored or shown again.
+ * Generate a new API key for a user, revoking any previous active key. The key
+ * is stored encrypted (AES-256-GCM) so the owner can reveal it again, plus a
+ * sha-256 hash for fast lookup.
  */
 export async function generateApiKey(userId: string): Promise<{
   key: string;
@@ -20,6 +22,7 @@ export async function generateApiKey(userId: string): Promise<{
   const secret = randomBytes(24).toString("base64url");
   const key = `${PREFIX}${secret}`;
   const keyHash = hashKey(key);
+  const keyCipher = encryptSecret(key);
   const keyPrefix = key.slice(0, PREFIX.length + 4); // e.g. skdb_a1b2
 
   // Revoke existing active keys (one active key per user).
@@ -28,8 +31,21 @@ export async function generateApiKey(userId: string): Promise<{
     .set({ revoked: true })
     .where(and(eq(apiKeys.userId, userId), eq(apiKeys.revoked, false)));
 
-  await db.insert(apiKeys).values({ userId, keyHash, keyPrefix });
+  await db.insert(apiKeys).values({ userId, keyHash, keyCipher, keyPrefix });
   return { key, prefix: keyPrefix };
+}
+
+/** Reveal the plaintext of a user's active API key (decrypted). */
+export async function revealApiKey(userId: string): Promise<string | null> {
+  const row = (
+    await db
+      .select({ keyCipher: apiKeys.keyCipher })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.userId, userId), eq(apiKeys.revoked, false)))
+      .limit(1)
+  )[0];
+  if (!row?.keyCipher) return null;
+  return decryptSecret(row.keyCipher);
 }
 
 export async function revokeApiKeys(userId: string): Promise<void> {

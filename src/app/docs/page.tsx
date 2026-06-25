@@ -66,20 +66,30 @@ export default function DocsPage() {
             that differ by up to {config.duration.shiftToleranceMs / 1000}s —
             assuming an extra/missing logo or scene at the start.
           </p>
+          <p className="mt-2">
+            The response gives the single best result per type as top-level keys.
+            Each value is the segment, <span className="mono">null</span> (no data
+            yet), or <span className="mono">{`{ "excluded": "duration_mismatch" }`}</span>{" "}
+            (we have data, but only for streams too different in length to match
+            yours). <span className="mono">confidence</span> is 0–1, based on how
+            many submissions agree plus community votes.
+          </p>
           <Code>{`curl "/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=2820000"
 
 {
-  "segments": [
-    {
-      "segment_type": "intro",
+  "imdb_id": "tt0903747", "season": 1, "episode": 1,
+  "requested_duration_ms": 2820000,
+  "segments": {
+    "intro": {
       "start_ms": 61000, "end_ms": 91000,
       "start_sec": 61,   "end_sec": 91,
       "match": "exact", "adjusted": false, "offset_ms": 0,
-      "votes": { "up": 12, "down": 1, "score": 11 }
-    }
-  ],
-  "alternatives": [ ... ],
-  "license": "CC BY-NC-SA 4.0 ..."
+      "confidence": 0.93
+    },
+    "recap":   null,
+    "outro":   { "start_ms": 2760000, "end_ms": 2820000, ... },
+    "preview": { "excluded": "duration_mismatch" }
+  }
 }`}</Code>
         </Endpoint>
 
@@ -89,8 +99,12 @@ export default function DocsPage() {
             <span className="mono">Authorization: Bearer skdb_…</span> or{" "}
             <span className="mono">X-API-Key</span> (or a session cookie). Times
             accept <span className="mono">*_ms</span> (numbers) or{" "}
-            <span className="mono">*_sec</span> (seconds or clock strings).{" "}
-            <span className="mono">agree_terms: true</span> is required.
+            <span className="mono">*_sec</span> (seconds or clock strings).
+            Submitting implies agreement to publish under CC BY-NC-SA 4.0 (see{" "}
+            <a href="/terms" className="text-skip hover:underline">
+              terms
+            </a>
+            ).
           </p>
           <Code>{`curl -X POST /api/segments \\
   -H "Authorization: Bearer skdb_xxx" \\
@@ -100,8 +114,7 @@ export default function DocsPage() {
     "season": 1, "episode": 1,
     "segment_type": "intro",
     "start_ms": 61000, "end_ms": 91000,
-    "duration_ms": 2820000,
-    "agree_terms": true
+    "duration_ms": 2820000
   }'
 
 { "id": 42, "status": "approved", "auto_approved": true,

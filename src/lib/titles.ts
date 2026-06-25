@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { titles, episodes } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { findByImdb, getSeasonEpisodes } from "./tmdb";
+import { findByImdb, getSeasonEpisodes, tmdbEnabled } from "./tmdb";
 import type { Title } from "@/db/schema";
 
 /**
@@ -15,7 +15,15 @@ export async function ensureTitle(
   const existing = (
     await db.select().from(titles).where(eq(titles.imdbId, imdbId))
   )[0];
-  if (existing) return existing;
+  if (existing) {
+    // Backfill artwork/metadata for legacy or manually-seeded titles that were
+    // created without a poster (e.g. the seeded Breaking Bad entry).
+    if (!existing.posterUrl && tmdbEnabled()) {
+      const refreshed = await refreshTitleMeta(existing);
+      if (refreshed) return refreshed;
+    }
+    return existing;
+  }
 
   const meta = await findByImdb(imdbId);
   if (meta) {
@@ -51,6 +59,27 @@ export async function ensureTitle(
     .onConflictDoUpdate({ target: titles.imdbId, set: { imdbId } })
     .returning();
   return row;
+}
+
+/** Refresh a title's metadata/artwork from TMDB (best-effort). */
+async function refreshTitleMeta(title: Title): Promise<Title | null> {
+  const meta = await findByImdb(title.imdbId);
+  if (!meta) return null;
+  const [row] = await db
+    .update(titles)
+    .set({
+      tmdbId: meta.tmdbId,
+      mediaType: meta.mediaType,
+      name: meta.name || title.name,
+      year: meta.year ?? title.year,
+      overview: meta.overview ?? title.overview,
+      posterUrl: meta.posterUrl,
+      backdropUrl: meta.backdropUrl,
+      refreshedAt: new Date(),
+    })
+    .where(eq(titles.id, title.id))
+    .returning();
+  return row ?? null;
 }
 
 /** Ensure episode metadata is cached for a series season (best-effort). */

@@ -1,0 +1,1 @@
+ALTER TABLE "resolved_segments" ADD COLUMN "confidence" real DEFAULT 0.5 NOT NULL;

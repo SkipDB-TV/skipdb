@@ -8,6 +8,7 @@ import { loadPanelSegments } from "@/lib/panel";
 import { auth } from "@/lib/auth";
 import { SegmentPanel } from "@/components/SegmentPanel";
 import { Timeline } from "@/components/Timeline";
+import { ApiLink } from "@/components/ApiLink";
 
 export const dynamic = "force-dynamic";
 
@@ -61,9 +62,12 @@ export default async function EpisodePage({
           S{String(season).padStart(2, "0")}E{String(episode).padStart(2, "0")}
         </span>
       </div>
-      <h1 className="mt-1 text-3xl font-bold text-white">
-        {ep?.name ?? `Episode ${episode}`}
-      </h1>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold text-white">
+          {ep?.name ?? `Episode ${episode}`}
+        </h1>
+        <ApiLink imdbId={id} season={season} episode={episode} />
+      </div>
       {ep?.overview && (
         <p className="mt-2 max-w-2xl text-sm text-slate-400">{ep.overview}</p>
       )}

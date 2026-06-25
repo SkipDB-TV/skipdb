@@ -19,6 +19,9 @@ interface Candidate {
   startMs: number;
   endMs: number;
   durationMs: number | null;
+  // When re-evaluating an edit, exclude the segment itself from comparisons so
+  // it can't reach "consensus" with its own previously-approved version.
+  excludeSegmentId?: number;
 }
 
 /**
@@ -47,7 +50,7 @@ export async function reviewSubmission(
     };
   }
 
-  const approved = await db
+  const approvedAll = await db
     .select()
     .from(segments)
     .where(
@@ -57,6 +60,10 @@ export async function reviewSubmission(
         eq(segments.status, "approved"),
       ),
     );
+  const approved =
+    candidate.excludeSegmentId != null
+      ? approvedAll.filter((s) => s.id !== candidate.excludeSegmentId)
+      : approvedAll;
 
   // Same-episode approved segments (for consensus + conflict detection).
   const sameEpisode = approved.filter(

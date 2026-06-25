@@ -59,5 +59,8 @@ export async function loadPanelSegments(opts: {
     score: r.score,
     status: r.status,
     yourVote: voteMap.get(r.id) ?? 0,
+    mine: opts.userId != null && r.submittedBy === opts.userId,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
   }));
 }

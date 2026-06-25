@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { segments, titles, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { AdminQueue } from "@/components/AdminQueue";
+import { buildReviewContext } from "@/lib/review-context";
 import type { SegmentTypeName } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,20 @@ export default async function AdminPage() {
     .orderBy(desc(segments.createdAt))
     .limit(200);
 
+  const context = await buildReviewContext(
+    rows.map((r) => ({
+      id: r.segment.id,
+      submittedBy: r.segment.submittedBy,
+      titleId: r.segment.titleId,
+      season: r.segment.season,
+      episode: r.segment.episode,
+      segmentType: r.segment.segmentType as SegmentTypeName,
+      startMs: r.segment.startMs,
+      endMs: r.segment.endMs,
+      durationMs: r.segment.durationMs,
+    })),
+  );
+
   const items = rows.map((r) => ({
     id: r.segment.id,
     imdbId: r.segment.imdbId,
@@ -37,6 +52,7 @@ export default async function AdminPage() {
     durationMs: r.segment.durationMs,
     submittedBy: r.submitter,
     createdAt: r.segment.createdAt.toISOString(),
+    context: context.get(r.segment.id) ?? null,
   }));
 
   return (

@@ -15,6 +15,20 @@
       "when": 1782412956289,
       "tag": "0001_chunky_medusa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782414991691,
+      "tag": "0002_regular_joshua_kane",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782419321844,
+      "tag": "0003_bumpy_crystal",
+      "breakpoints": true
     }
   ]
 }

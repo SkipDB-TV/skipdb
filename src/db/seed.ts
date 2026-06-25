@@ -1,7 +1,8 @@
 import "dotenv/config";
 import { db } from "./index";
-import { titles, episodes, segments, users } from "./schema";
-import { eq } from "drizzle-orm";
+import { titles, episodes, segments, users, resolvedSegments } from "./schema";
+import { eq, desc } from "drizzle-orm";
+import { computeConfidence, countAgreement } from "../lib/confidence";
 
 /**
  * Seeds a small, realistic dataset so the app is explorable immediately:
@@ -160,8 +161,53 @@ async function main() {
     votesDown: 0,
   });
 
+  await backfillResolved();
+
   console.log("Seed complete.");
   process.exit(0);
+}
+
+/** Populate the resolved (decided best) segment per (episode, type). */
+async function backfillResolved() {
+  const approved = await db
+    .select()
+    .from(segments)
+    .where(eq(segments.status, "approved"))
+    .orderBy(
+      desc(segments.score),
+      desc(segments.votesUp),
+      desc(segments.createdAt),
+    );
+  await db.delete(resolvedSegments);
+  const groups = new Map<string, typeof approved>();
+  for (const s of approved) {
+    const k = `${s.imdbId}|${s.season}|${s.episode}|${s.segmentType}`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(s);
+  }
+  for (const group of groups.values()) {
+    const best = group[0];
+    const confidence = computeConfidence({
+      agreeCount: countAgreement(best, group),
+      votesUp: best.votesUp,
+      votesDown: best.votesDown,
+    });
+    await db.insert(resolvedSegments).values({
+      imdbId: best.imdbId,
+      titleId: best.titleId,
+      season: best.season,
+      episode: best.episode,
+      segmentType: best.segmentType,
+      segmentId: best.id,
+      startMs: best.startMs,
+      endMs: best.endMs,
+      durationMs: best.durationMs,
+      votesUp: best.votesUp,
+      votesDown: best.votesDown,
+      score: best.score,
+      confidence,
+    });
+  }
 }
 
 async function upsertEpisode(

@@ -1,7 +1,8 @@
 import { db } from "@/db";
 import { segments, moderationLog } from "@/db/schema";
 import { json, apiError, preflight, LICENSE_NOTICE } from "@/lib/api";
-import { getMatchedSegments } from "@/lib/segments";
+import { getBestByType } from "@/lib/segments";
+import { recomputeResolved } from "@/lib/resolved";
 import { submitSchema, validateSegmentBounds } from "@/lib/validation";
 import { getActor } from "@/lib/actor";
 import { reviewSubmission } from "@/lib/review";
@@ -18,8 +19,7 @@ export function OPTIONS() {
 // --- Read (open, rate-limited) ---
 export async function GET(req: Request) {
   const rl = rateLimit(`read:${clientIp(req)}`, config.limits.readPerMinute);
-  if (!rl.ok)
-    return apiError("Rate limit exceeded", 429, { retry_after_s: 0 });
+  if (!rl.ok) return apiError("Rate limit exceeded", 429, { retry_after_s: 0 });
 
   const url = new URL(req.url);
   const imdbId = url.searchParams.get("imdb_id")?.toLowerCase();
@@ -39,16 +39,17 @@ export async function GET(req: Request) {
     );
 
   // duration accepts ms (if "duration_ms" or large) — treat plain "duration" as ms.
-  const durationMs = durationRaw != null ? Math.round(Number(durationRaw)) : null;
+  const durationMs =
+    durationRaw != null ? Math.round(Number(durationRaw)) : null;
   if (durationRaw != null && (durationMs == null || Number.isNaN(durationMs)))
     return apiError("duration must be a number in milliseconds", 400);
 
-  const result = await getMatchedSegments({
+  const segmentsByType = await getBestByType({
     imdbId,
     season: seasonRaw != null ? Number(seasonRaw) : null,
     episode: episodeRaw != null ? Number(episodeRaw) : null,
     durationMs,
-    type: typeRaw as never,
+    types: typeRaw ? [typeRaw as never] : undefined,
   });
 
   return json(
@@ -57,9 +58,9 @@ export async function GET(req: Request) {
       season: seasonRaw != null ? Number(seasonRaw) : null,
       episode: episodeRaw != null ? Number(episodeRaw) : null,
       requested_duration_ms: durationMs,
-      segments: result.best,
-      alternatives: result.all,
-      license: LICENSE_NOTICE,
+      // Best result per type as top-level keys. Each value is the segment,
+      // null (no data), or { excluded: "duration_mismatch" }.
+      segments: segmentsByType,
     },
     { headers: rateLimitHeaders(rl) },
   );
@@ -74,10 +75,7 @@ export async function POST(req: Request) {
       401,
     );
 
-  const rl = rateLimit(
-    `write:${actor.user.id}`,
-    config.limits.writePerMinute,
-  );
+  const rl = rateLimit(`write:${actor.user.id}`, config.limits.writePerMinute);
   if (!rl.ok) return apiError("Rate limit exceeded", 429);
 
   let body: unknown;
@@ -103,10 +101,7 @@ export async function POST(req: Request) {
 
   // Resolve / create the title (also infers media type from IMDb lookup).
   const isMovie = input.season == null && input.episode == null;
-  const title = await ensureTitle(
-    input.imdbId,
-    isMovie ? "movie" : "series",
-  );
+  const title = await ensureTitle(input.imdbId, isMovie ? "movie" : "series");
 
   const decision = await reviewSubmission(
     {
@@ -145,6 +140,14 @@ export async function POST(req: Request) {
       moderatorId: null,
       action: "auto-approve",
       reason: decision.reasons.join("; "),
+    });
+    // Refresh the decided/best segment for this episode + type.
+    await recomputeResolved({
+      imdbId: input.imdbId,
+      titleId: title.id,
+      season: input.season,
+      episode: input.episode,
+      segmentType: input.segmentType,
     });
   }
 

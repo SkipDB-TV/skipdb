@@ -25,21 +25,32 @@ export function parseTimeToMs(input: unknown): number | null {
   return null;
 }
 
-/** ms -> seconds with millisecond precision (e.g. 61500 -> 61.5). */
-export function msToSec(ms: number): number {
-  return Math.round(ms) / 1000;
+/**
+ * SkipDB stores time to one decimal place of seconds (100 ms granularity) —
+ * finer precision than that is pointless for skipping. Round any ms value to
+ * the nearest decisecond.
+ */
+export const TIME_GRANULARITY_MS = 100;
+export function roundTime(ms: number): number {
+  return Math.round(ms / TIME_GRANULARITY_MS) * TIME_GRANULARITY_MS;
 }
 
-/** ms -> clock string hh:mm:ss(.mmm). */
+/** ms -> seconds at one decimal place (e.g. 61500 -> 61.5). */
+export function msToSec(ms: number): number {
+  return Math.round(ms / TIME_GRANULARITY_MS) / 10;
+}
+
+/** ms -> clock string hh:mm:ss(.d) at one decimal of seconds. */
 export function msToClock(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
+  const rounded = roundTime(ms);
+  const totalSec = Math.floor(rounded / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
   const base = h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
-  const remMs = Math.round(ms % 1000);
-  return remMs ? `${base}.${String(remMs).padStart(3, "0")}` : base;
+  const tenths = Math.round((rounded % 1000) / 100);
+  return tenths ? `${base}.${tenths}` : base;
 }
 
 /**
@@ -57,8 +68,6 @@ export function publicTimes(opts: {
     end_ms: opts.endMs,
     start_sec: msToSec(opts.startMs),
     end_sec: msToSec(opts.endMs),
-    duration_skipped_ms: opts.endMs - opts.startMs,
-    duration_skipped_sec: msToSec(opts.endMs - opts.startMs),
     adjusted: opts.adjusted,
     offset_ms: opts.offsetMs,
   };

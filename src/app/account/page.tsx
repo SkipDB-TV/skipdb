@@ -5,7 +5,9 @@ import { db } from "@/db";
 import { segments } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { activeKeyInfo } from "@/lib/api-key";
+import { usesSocialLogin } from "@/lib/account";
 import { ApiKeyManager } from "@/components/ApiKeyManager";
+import { ProfileEditor } from "@/components/ProfileEditor";
 import { SegmentChip } from "@/components/SegmentChip";
 import { msToClock } from "@/lib/time";
 import type { SegmentTypeName } from "@/lib/config";
@@ -18,6 +20,7 @@ export default async function AccountPage() {
   const user = session.user;
 
   const keyInfo = await activeKeyInfo(user.id);
+  const social = await usesSocialLogin(user.id);
   const mine = await db
     .select()
     .from(segments)
@@ -42,6 +45,12 @@ export default async function AccountPage() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <ProfileEditor
+          initialName={user.name ?? ""}
+          initialEmail={user.email ?? ""}
+          social={social}
+        />
+
         <ApiKeyManager
           initial={
             keyInfo
@@ -55,23 +64,21 @@ export default async function AccountPage() {
               : null
           }
         />
+      </div>
 
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-white">How it works</h2>
-          <ul className="mt-3 space-y-2 text-sm text-slate-400">
-            <li>
-              Submissions that match a show&apos;s established pattern, reach
-              consensus, or come from trusted contributors go live instantly.
-            </li>
-            <li>
-              Everything else enters the review queue for a moderator.
-            </li>
-            <li>
-              Earn reputation when your segments are approved and upvoted — reach
-              the trust threshold and your future submissions auto-approve.
-            </li>
-          </ul>
-        </div>
+      <div className="card mt-6 p-6">
+        <h2 className="text-lg font-semibold text-white">How it works</h2>
+        <ul className="mt-3 space-y-2 text-sm text-slate-400">
+          <li>
+            Submissions that match a show&apos;s established pattern, reach
+            consensus, or come from trusted contributors go live instantly.
+          </li>
+          <li>Everything else enters the review queue for a moderator.</li>
+          <li>
+            Earn reputation when your segments are approved and upvoted — reach
+            the trust threshold and your future submissions auto-approve.
+          </li>
+        </ul>
       </div>
 
       <h2 className="mt-12 text-xl font-semibold text-white">

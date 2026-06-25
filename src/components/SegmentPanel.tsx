@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { msToClock, msToSec } from "@/lib/time";
+import { msToClock, msToSec, parseTimeToMs } from "@/lib/time";
 import { SEGMENT_META, SEGMENT_ORDER } from "@/lib/segment-types";
+import { Tooltip } from "./Tooltip";
 import type { SegmentTypeName } from "@/lib/config";
 
 export interface PanelSegment {
@@ -17,7 +18,22 @@ export interface PanelSegment {
   score: number;
   status: "approved" | "pending" | "rejected";
   yourVote: number;
+  mine: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
+
+/** Compact, locale-aware date for display (e.g. "12 Jun 2026"). */
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+const DURATION_HELP =
+  "Optional: the total length of the stream you timed this on. It lets SkipDB match your segment to viewers whose stream is a slightly different length (e.g. an extra logo at the start) by shifting the times to fit.";
 
 export function SegmentPanel({
   imdbId,
@@ -36,7 +52,12 @@ export function SegmentPanel({
 }) {
   const router = useRouter();
   const [segments, setSegments] = useState(initial);
-  const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Keep in sync when the server re-sends data (e.g. after router.refresh()).
+  useEffect(() => {
+    setSegments(initial);
+  }, [initial]);
 
   async function vote(id: number, value: number) {
     if (!isAuthed) {
@@ -67,6 +88,15 @@ export function SegmentPanel({
     );
   }
 
+  async function remove(id: number) {
+    if (!confirm("Delete this submission? This cannot be undone.")) return;
+    const res = await fetch(`/api/segments/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setSegments((prev) => prev.filter((s) => s.id !== id));
+      router.refresh();
+    }
+  }
+
   const grouped = SEGMENT_ORDER.map((t) => ({
     type: t,
     items: segments.filter((s) => s.segmentType === t),
@@ -91,44 +121,111 @@ export function SegmentPanel({
                   <span className="text-xs text-slate-500">{meta.desc}</span>
                 </div>
                 <div className="space-y-2">
-                  {g.items.map((s) => (
-                    <div
-                      key={s.id}
-                      className="card flex items-center justify-between gap-4 p-4"
-                    >
-                      <div className="min-w-0">
-                        <p className="mono text-sm text-white">
-                          {msToClock(s.startMs)} → {msToClock(s.endMs)}{" "}
-                          <span className="text-slate-500">
-                            ({msToSec(s.startMs)}s–{msToSec(s.endMs)}s)
-                          </span>
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          skips {msToSec(s.endMs - s.startMs)}s
-                          {s.durationMs
-                            ? ` · timed on a ${msToClock(s.durationMs)} stream`
-                            : " · no stream duration"}
-                          {s.status === "pending" && (
-                            <span className="ml-2 text-warn">· pending</span>
+                  {g.items.map((s) =>
+                    editingId === s.id ? (
+                      <div key={s.id} className="card p-4">
+                        <SegmentForm
+                          mode="edit"
+                          initialType={s.segmentType}
+                          initialStart={String(msToSec(s.startMs))}
+                          initialEnd={String(msToSec(s.endMs))}
+                          initialDuration={
+                            s.durationMs != null
+                              ? String(msToSec(s.durationMs))
+                              : ""
+                          }
+                          defaultDurationMs={defaultDurationMs}
+                          isAuthed={isAuthed}
+                          onCancel={() => setEditingId(null)}
+                          onSubmit={async (payload) => {
+                            const res = await fetch(`/api/segments/${s.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(payload),
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (res.ok) {
+                              setEditingId(null);
+                              router.refresh();
+                            }
+                            return { ok: res.ok, data };
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        key={s.id}
+                        className="card flex items-center justify-between gap-4 p-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="mono text-sm text-white">
+                            {msToClock(s.startMs)} → {msToClock(s.endMs)}{" "}
+                            <span className="text-slate-500">
+                              ({msToSec(s.startMs)}s–{msToSec(s.endMs)}s)
+                            </span>
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            skips {msToSec(s.endMs - s.startMs)}s
+                            {s.durationMs
+                              ? ` · timed on a ${msToClock(s.durationMs)} stream`
+                              : " · no stream duration"}
+                            {s.status === "pending" && (
+                              <span className="ml-2 text-warn">· pending</span>
+                            )}
+                            {s.mine && (
+                              <span className="ml-2 text-signal-bright">
+                                · yours
+                              </span>
+                            )}
+                          </p>
+                          <p
+                            className="mt-0.5 text-[11px] text-slate-600"
+                            title={new Date(s.createdAt).toLocaleString()}
+                          >
+                            Submitted {formatDate(s.createdAt)}
+                            {new Date(s.updatedAt).getTime() -
+                              new Date(s.createdAt).getTime() >
+                              1000 && (
+                              <span title={new Date(s.updatedAt).toLocaleString()}>
+                                {" "}
+                                · edited {formatDate(s.updatedAt)}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          {s.mine && (
+                            <>
+                              <button
+                                onClick={() => setEditingId(s.id)}
+                                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => remove(s.id)}
+                                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-rose-300 transition hover:bg-danger/10"
+                              >
+                                Delete
+                              </button>
+                            </>
                           )}
-                        </p>
+                          <VoteButton
+                            dir="up"
+                            active={s.yourVote === 1}
+                            count={s.votesUp}
+                            onClick={() => vote(s.id, 1)}
+                          />
+                          <VoteButton
+                            dir="down"
+                            active={s.yourVote === -1}
+                            count={s.votesDown}
+                            onClick={() => vote(s.id, -1)}
+                          />
+                        </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <VoteButton
-                          dir="up"
-                          active={s.yourVote === 1}
-                          count={s.votesUp}
-                          onClick={() => vote(s.id, 1)}
-                        />
-                        <VoteButton
-                          dir="down"
-                          active={s.yourVote === -1}
-                          count={s.votesDown}
-                          onClick={() => vote(s.id, -1)}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
               </div>
             );
@@ -136,16 +233,40 @@ export function SegmentPanel({
         </div>
       )}
 
-      <SubmitForm
-        imdbId={imdbId}
-        season={season}
-        episode={episode}
-        defaultDurationMs={defaultDurationMs}
-        isAuthed={isAuthed}
-        busy={busy}
-        setBusy={setBusy}
-        onDone={() => router.refresh()}
-      />
+      {/* New submission */}
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-white">
+          Contribute a segment
+        </h3>
+        <p className="mb-4 mt-1 text-sm text-slate-400">
+          Times accept seconds (<span className="mono">91</span>) or clock format
+          (<span className="mono">1:31</span>).
+        </p>
+        <SegmentForm
+          mode="create"
+          initialType="intro"
+          initialStart=""
+          initialEnd=""
+          initialDuration=""
+          defaultDurationMs={defaultDurationMs}
+          isAuthed={isAuthed}
+          onSubmit={async (payload) => {
+            const res = await fetch("/api/segments", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                imdb_id: imdbId,
+                season: season ?? undefined,
+                episode: episode ?? undefined,
+                ...payload,
+              }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) router.refresh();
+            return { ok: res.ok, data };
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -181,36 +302,56 @@ function VoteButton({
   );
 }
 
-function SubmitForm({
-  imdbId,
-  season,
-  episode,
+/** Faded "other format" hint for a time input (seconds <-> mm:ss). */
+function TimeHint({ value }: { value: string }) {
+  const v = value.trim();
+  if (!v) return null;
+  const ms = parseTimeToMs(v);
+  if (ms == null) return null;
+  const alt = v.includes(":") ? `${msToSec(ms)}s` : msToClock(ms);
+  return <span className="mono text-[11px] text-slate-600">= {alt}</span>;
+}
+
+interface FormPayload {
+  segment_type: SegmentTypeName;
+  start_sec: string;
+  end_sec: string;
+  duration_sec?: string;
+  clear_duration?: boolean;
+}
+
+function SegmentForm({
+  mode,
+  initialType,
+  initialStart,
+  initialEnd,
+  initialDuration,
   defaultDurationMs,
   isAuthed,
-  busy,
-  setBusy,
-  onDone,
+  onSubmit,
+  onCancel,
 }: {
-  imdbId: string;
-  season: number | null;
-  episode: number | null;
+  mode: "create" | "edit";
+  initialType: SegmentTypeName;
+  initialStart: string;
+  initialEnd: string;
+  initialDuration: string;
   defaultDurationMs: number | null;
   isAuthed: boolean;
-  busy: boolean;
-  setBusy: (b: boolean) => void;
-  onDone: () => void;
+  onSubmit: (
+    payload: FormPayload,
+  ) => Promise<{ ok: boolean; data: { message?: string; error?: string; issues?: string[] } }>;
+  onCancel?: () => void;
 }) {
-  const [type, setType] = useState<SegmentTypeName>("intro");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [duration, setDuration] = useState(
-    defaultDurationMs ? String(msToSec(defaultDurationMs)) : "",
-  );
-  const [agree, setAgree] = useState(false);
+  const [type, setType] = useState<SegmentTypeName>(initialType);
+  const [start, setStart] = useState(initialStart);
+  const [end, setEnd] = useState(initialEnd);
+  const [duration, setDuration] = useState(initialDuration);
+  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(ev: React.FormEvent) {
+    ev.preventDefault();
     setMsg(null);
     if (!isAuthed) {
       window.location.href = "/auth/signin";
@@ -218,34 +359,29 @@ function SubmitForm({
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/segments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imdb_id: imdbId,
-          segment_type: type,
-          season: season ?? undefined,
-          episode: episode ?? undefined,
-          start_sec: start,
-          end_sec: end,
-          duration_sec: duration || undefined,
-          agree_terms: agree,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const payload: FormPayload = {
+        segment_type: type,
+        start_sec: start,
+        end_sec: end,
+      };
+      if (mode === "edit" && duration.trim() === "") payload.clear_duration = true;
+      else if (duration.trim() !== "") payload.duration_sec = duration;
+
+      const { ok, data } = await onSubmit(payload);
+      if (!ok) {
         setMsg({
           ok: false,
-          text:
-            data.issues?.map((i: { message: string }) => i.message).join(", ") ??
-            data.error ??
-            "Submission failed",
+          text: Array.isArray(data.issues)
+            ? data.issues.join(", ")
+            : (data.error ?? "Something went wrong"),
         });
       } else {
-        setMsg({ ok: true, text: data.message });
-        setStart("");
-        setEnd("");
-        onDone();
+        setMsg({ ok: true, text: data.message ?? "Saved." });
+        if (mode === "create") {
+          setStart("");
+          setEnd("");
+          setDuration("");
+        }
       }
     } finally {
       setBusy(false);
@@ -253,20 +389,19 @@ function SubmitForm({
   }
 
   return (
-    <form onSubmit={submit} className="card space-y-4 p-6">
-      <h3 className="text-lg font-semibold text-white">Contribute a segment</h3>
-      <p className="text-sm text-slate-400">
-        Times accept seconds (<span className="mono">91</span>) or clock format (
-        <span className="mono">1:31</span>). Add the stream duration so your
-        timing can be matched against other versions.
-      </p>
-
+    <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-4">
         <label className="text-sm">
           <span className="mb-1 block text-slate-400">Type</span>
           <select
-            className="input"
+            className="input disabled:cursor-not-allowed disabled:opacity-60"
             value={type}
+            disabled={mode === "edit"}
+            title={
+              mode === "edit"
+                ? "Type can't be changed — delete and resubmit to change it"
+                : undefined
+            }
             onChange={(e) => setType(e.target.value as SegmentTypeName)}
           >
             {SEGMENT_ORDER.map((t) => (
@@ -275,9 +410,16 @@ function SubmitForm({
               </option>
             ))}
           </select>
+          {mode === "edit" && (
+            <span className="mt-1 block text-[11px] text-slate-500">
+              Can&apos;t change — delete &amp; resubmit
+            </span>
+          )}
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-400">Start</span>
+          <span className="mb-1 flex items-center justify-between text-slate-400">
+            Start <TimeHint value={start} />
+          </span>
           <input
             className="input mono"
             value={start}
@@ -287,7 +429,9 @@ function SubmitForm({
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-400">End</span>
+          <span className="mb-1 flex items-center justify-between text-slate-400">
+            End <TimeHint value={end} />
+          </span>
           <input
             className="input mono"
             value={end}
@@ -297,58 +441,62 @@ function SubmitForm({
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-400">
-            Stream duration <span className="text-slate-600">(optional)</span>
+          <span className="mb-1 flex items-center justify-between text-slate-400">
+            <span className="flex items-center gap-1">
+              Stream duration <Tooltip text={DURATION_HELP} />
+            </span>
+            <TimeHint value={duration} />
           </span>
           <input
             className="input mono"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            placeholder="47:00"
+            placeholder={
+              defaultDurationMs ? `e.g. ${msToClock(defaultDurationMs)}` : "47:00"
+            }
           />
         </label>
       </div>
 
-      <label className="flex items-start gap-2 text-sm text-slate-300">
-        <input
-          type="checkbox"
-          checked={agree}
-          onChange={(e) => setAgree(e.target.checked)}
-          className="mt-1 h-4 w-4 accent-skip"
-          required
-        />
-        <span>
-          I agree that my contribution is published and may be freely used under{" "}
-          <a
-            href="/license"
-            className="text-skip hover:underline"
-            target="_blank"
-          >
-            CC BY-NC-SA 4.0
-          </a>
-          , per the{" "}
-          <a href="/terms" className="text-skip hover:underline" target="_blank">
-            submission terms
-          </a>
-          .
-        </span>
-      </label>
-
       {msg && (
         <p
           className={`rounded-xl px-4 py-2 text-sm ${
-            msg.ok
-              ? "bg-ok/10 text-ok"
-              : "bg-danger/10 text-rose-300"
+            msg.ok ? "bg-ok/10 text-ok" : "bg-danger/10 text-rose-300"
           }`}
         >
           {msg.text}
         </p>
       )}
 
-      <button className="btn-primary" disabled={busy || !agree} type="submit">
-        {busy ? "Submitting…" : isAuthed ? "Submit segment" : "Sign in to submit"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button className="btn-primary" disabled={busy} type="submit">
+          {busy
+            ? "Saving…"
+            : mode === "edit"
+              ? "Save changes"
+              : isAuthed
+                ? "Submit segment"
+                : "Sign in to submit"}
+        </button>
+        {mode === "edit" && onCancel && (
+          <button type="button" className="btn-ghost" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+        {mode === "create" && (
+          <p className="text-xs text-slate-500">
+            By submitting you agree it&apos;s published under{" "}
+            <a href="/license" target="_blank" className="text-skip hover:underline">
+              CC BY-NC-SA 4.0
+            </a>{" "}
+            (
+            <a href="/terms" target="_blank" className="text-skip hover:underline">
+              terms
+            </a>
+            ).
+          </p>
+        )}
+      </div>
     </form>
   );
 }

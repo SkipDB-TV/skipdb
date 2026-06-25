@@ -26,7 +26,7 @@ export async function POST() {
       key,
       prefix,
       message:
-        "Store this key now — it will not be shown again. Generating again revokes this one.",
+        "Here is your API key. You can reveal it again later from this page. Generating again revokes this one.",
     },
     { status: 201 },
   );

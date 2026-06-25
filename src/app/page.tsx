@@ -111,13 +111,17 @@ curl "https://skipdb/api/segments?\\
   imdb_id=tt0903747&season=1&episode=1&duration=2820000"
 
 {
-  "segments": [{
-    "segment_type": "intro",
-    "start_ms": 61000, "end_ms": 91000,
-    "start_sec": 61,   "end_sec": 91,
-    "match": "exact", "adjusted": false
-  }],
-  "license": "CC BY-NC-SA 4.0 ..."
+  "segments": {
+    "intro": {
+      "start_ms": 61000, "end_ms": 91000,
+      "start_sec": 61,   "end_sec": 91,
+      "match": "exact", "adjusted": false,
+      "confidence": 0.93
+    },
+    "recap": null,
+    "outro": { "start_ms": 2760000, ... },
+    "preview": { "excluded": "duration_mismatch" }
+  }
 }`}</code>
         </pre>
       </section>
