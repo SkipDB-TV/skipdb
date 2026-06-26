@@ -4,7 +4,7 @@ import { API_URL, BASE_URL } from "@/lib/urls";
 export const metadata: Metadata = {
   title: "Open data",
   description:
-    "Download all SkipDB skip timestamps as open data (ODbL 1.0), or self-host a read-only mirror or a full fork.",
+    "Download all SkipDB skip timestamps as open data (ODbL 1.0 + reciprocity), or self-host a read-only mirror or a full fork.",
 };
 
 const DUMP_URL = process.env.NEXT_PUBLIC_DUMP_URL;
@@ -83,7 +83,7 @@ export default function DumpPage() {
             it&apos;s available even if this site goes down.
           </p>
           <CodeBlock>{`{
-  "license": "ODbL 1.0",
+  "license": "ODbL 1.0 + Service Provider Reciprocity",
   "generated_at": "2026-01-01T03:00:00.000Z",
   "count": 12345,
   "segments": [

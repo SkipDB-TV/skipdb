@@ -14,7 +14,7 @@ export function OPTIONS() {
 /**
  * Public data dump of all APPROVED segments — SponsorBlock-style open data.
  * Contains no PII: submitted_by is an opaque user ID for moderation continuity.
- * Licensed ODbL 1.0.
+ * Licensed ODbL 1.0 + Service Provider Reciprocity.
  *
  * Current implementation streams the full dataset as JSON. A scheduled,
  * downloadable mirror (and CSV variant) is on the roadmap; the schema is built

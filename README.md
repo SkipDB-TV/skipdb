@@ -7,7 +7,7 @@ previews — contributed by people, reviewed by the community, and **published o
 can never be quietly locked away or sold off.
 
 - **Code license:** [AGPL-3.0](./LICENSE)
-- **Data license:** [ODbL 1.0](./DATA-LICENSE) (unless you have explicit written permission)
+- **Data license:** [ODbL 1.0 + reciprocity](./DATA-LICENSE) (unless you have explicit written permission)
 
 > SkipDB's whole point is that the data stays open. Other services collect community submissions
 > but keep the resulting database proprietary so they can monetize it or shut it down. SkipDB keeps
@@ -19,7 +19,7 @@ can never be quietly locked away or sold off.
 |                        | SkipDB                                          | Typical alternatives              |
 | ---------------------- | ----------------------------------------------- | --------------------------------- |
 | Source code            | ✅ AGPL-3.0                                     | Often closed                      |
-| Submitted data         | ✅ ODbL 1.0, openly published                   | Frequently proprietary            |
+| Submitted data         | ✅ ODbL 1.0 + reciprocity, openly published     | Frequently proprietary            |
 | Multi-stream durations | ✅ duration-aware matching + smart offset shift | rarely handled                    |
 | Public data dump       | ✅ daily export to GitHub Releases, no user PII | strict terms blocking data access |
 
@@ -166,5 +166,5 @@ pnpm db:resolve
 
 ## Contributing & terms
 
-By submitting, you agree your contribution is published under **ODbL 1.0** and grant SkipDB the
+By submitting, you agree your contribution is published under **ODbL 1.0 + reciprocity** and grant SkipDB the
 right to adopt any successor open data license for future exports. See [TERMS.md](./TERMS.md).

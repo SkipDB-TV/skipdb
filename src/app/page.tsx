@@ -90,7 +90,7 @@ export default async function HomePage() {
         {[
           {
             title: "The data stays open",
-            body: "Code is AGPL-3.0, data is ODbL 1.0. A public dump means SkipDB can never be made proprietary or shut down with the data held hostage.",
+            body: "Code is AGPL-3.0, data is ODbL 1.0 + reciprocity. A public dump means SkipDB can never be made proprietary or shut down with the data held hostage.",
           },
           {
             title: "Voted, not just submitted",
