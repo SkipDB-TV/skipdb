@@ -39,12 +39,10 @@ export default function DumpPage() {
       <p className="mt-2 max-w-2xl text-slate-400">
         Every segment in SkipDB is published as open data under{" "}
         <a
-          href="https://opendatacommons.org/licenses/odbl/1-0/"
+          href="/license"
           className="text-skip hover:underline"
-          target="_blank"
-          rel="noreferrer"
         >
-          ODbL 1.0
+          ODbL 1.0 with a Service Provider Reciprocity obligation
         </a>
         . The data contains no user information — only timestamps, titles, and
         community vote counts.
@@ -118,13 +116,8 @@ export default function DumpPage() {
               AGPL-3.0
             </a>{" "}
             and the data is{" "}
-            <a
-              href="https://opendatacommons.org/licenses/odbl/1-0/"
-              className="text-skip hover:underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              ODbL 1.0
+            <a href="/license" className="text-skip hover:underline">
+              ODbL 1.0 + reciprocity
             </a>
             . Both licenses guarantee that neither can be quietly made
             proprietary. The daily dump to GitHub Releases means a permanent,

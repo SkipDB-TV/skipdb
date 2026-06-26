@@ -42,10 +42,21 @@ export default function TermsPage() {
           </li>
           <li>
             <strong className="text-white">The data may be used by anyone</strong>{" "}
-            under the terms of ODbL 1.0: with attribution and shared alike (any
-            derivative database must also be released under ODbL 1.0 or a
-            compatible open license). The dataset cannot be relicensed as
-            proprietary.
+            under ODbL 1.0 with attribution and share-alike. Any derivative
+            database must also be released under ODbL 1.0 or a compatible open
+            license. The dataset cannot be relicensed as proprietary.
+          </li>
+          <li>
+            <strong className="text-white">Service providers must reciprocate.</strong>{" "}
+            If you operate a public app, API, or hosted service and use SkipDB
+            data to seed, validate, or augment a private skip-segment database,
+            you must make your corresponding data publicly available under ODbL
+            1.0 or a compatible open license. Read-only API use to display skip
+            times is not affected. See the{" "}
+            <a href="/license" className="text-skip hover:underline">
+              full license
+            </a>{" "}
+            for details.
           </li>
           <li>
             <strong className="text-white">No warranty.</strong> The data is
@@ -62,13 +73,8 @@ export default function TermsPage() {
           is licensed separately under <strong>AGPL-3.0</strong>. The{" "}
           <strong className="text-white">database and API contents</strong> are
           licensed under{" "}
-          <a
-            href="https://opendatacommons.org/licenses/odbl/1-0/"
-            className="text-skip hover:underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            ODbL 1.0
+          <a href="/license" className="text-skip hover:underline">
+            ODbL 1.0 + Service Provider Reciprocity
           </a>
           .
         </p>

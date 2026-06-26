@@ -64,12 +64,12 @@ export async function GET(req: Request) {
 
   return json(
     {
-      license: "ODbL 1.0",
-      license_url: "https://opendatacommons.org/licenses/odbl/1-0/",
+      license: "ODbL 1.0 + Service Provider Reciprocity",
+      license_url: "https://skipdb.tv/license",
       attribution: "SkipDB — https://github.com/SkipDB-TV/skipdb (open data)",
       generated_at: new Date().toISOString(),
       count: data.length,
-      note: "Contains no PII. submitted_by is an opaque user ID for moderation continuity only. By using this data you agree to ODbL 1.0 unless you have explicit permission.",
+      note: "Contains no PII. submitted_by is an opaque user ID for moderation continuity only. By using this data you agree to ODbL 1.0 + Service Provider Reciprocity unless you have explicit permission.",
       segments: data,
     },
     {

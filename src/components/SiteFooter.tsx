@@ -65,8 +65,10 @@ export function SiteFooter() {
       <div className="container-page mt-8 flex flex-col gap-4 text-xs text-slate-500">
         <p>
           Code: <span className="text-slate-300">AGPL-3.0</span> · Data:{" "}
-          <span className="text-slate-300">ODbL 1.0</span> unless you have
-          explicit permission.
+          <a href="/license" className="text-slate-300 hover:underline">
+            ODbL 1.0 + reciprocity
+          </a>{" "}
+          unless you have explicit permission.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <a
