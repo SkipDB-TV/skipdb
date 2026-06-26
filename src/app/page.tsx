@@ -148,7 +148,7 @@ export default async function HomePage() {
             <Link href="/docs" className="btn-primary">
               Read the API docs
             </Link>
-            <Link href="/dump" className="btn-ghost">
+            <Link href="/data" className="btn-ghost">
               The data
             </Link>
           </div>

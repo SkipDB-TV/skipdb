@@ -57,21 +57,10 @@ export async function GET(req: Request) {
   const episode = episodeRaw != null ? Number(episodeRaw) : null;
   const types = typeRaw ? ([typeRaw] as (typeof config.segmentTypes)[number][]) : [...config.segmentTypes];
 
-  const t0 = performance.now();
   const [segmentsByType, introLengthEstimateMs] = await Promise.all([
-    getBestByType({ imdbId, season, episode, durationMs, adjust, types }).then((r) => {
-      console.log(`[segments/best]     ${Math.round(performance.now() - t0)}ms`);
-      return r;
-    }),
-    getIntroLengthEstimate(imdbId, season).then((r) => {
-      console.log(`[segments/estimate] ${Math.round(performance.now() - t0)}ms`);
-      return r;
-    }),
+    getBestByType({ imdbId, season, episode, durationMs, adjust, types }),
+    getIntroLengthEstimate(imdbId, season),
   ]);
-  const t1 = performance.now();
-  console.log(
-    `[segments] ${imdbId} S${season}E${episode} duration=${durationMs} db=${Math.round(t1 - t0)}ms`,
-  );
 
   return json(
     {

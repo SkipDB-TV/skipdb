@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-or-later",
-  "description": "Open, crowdsourced intro/recap/outro/preview skip timestamps for movies and TV. Code: AGPL-3.0, Data: ODbL 1.0.",
+  "description": "Open, crowdsourced intro/recap/outro/preview skip timestamps for movies and TV. Code: AGPL-3.0, Data: ODbL 1.0 + reciprocity.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SkipDB-TV/skipdb"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

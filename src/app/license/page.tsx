@@ -93,7 +93,7 @@ export default function LicensePage() {
           databases — it requires attribution and that any derivative database
           be shared under the same terms, preventing anyone from extracting the
           data and locking it away in a proprietary product. The public{" "}
-          <a href="/dump" className="text-skip hover:underline">
+          <a href="/data" className="text-skip hover:underline">
             data dump
           </a>{" "}
           makes that guarantee concrete.

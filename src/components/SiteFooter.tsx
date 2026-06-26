@@ -31,7 +31,7 @@ export function SiteFooter() {
             <Link href="/docs" className="block hover:text-white">
               API docs
             </Link>
-            <Link href="/dump" className="block hover:text-white">
+            <Link href="/data" className="block hover:text-white">
               Data dump
             </Link>
             <Link href="/search" className="block hover:text-white">

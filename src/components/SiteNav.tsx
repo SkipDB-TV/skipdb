@@ -28,7 +28,7 @@ export async function SiteNav() {
           <Link href="/docs" className="hover:text-white">
             API
           </Link>
-          <Link href="/dump" className="hover:text-white">
+          <Link href="/data" className="hover:text-white">
             Data
           </Link>
           {isStaff && (

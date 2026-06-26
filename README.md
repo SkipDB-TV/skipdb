@@ -1,4 +1,6 @@
-# ⏭ SkipDB
+# SkipDB
+
+![SkipDB](.github/skipdb_full.jpg)
 
 **Open, crowdsourced skip timestamps for movies & TV.** Intros, recaps, outros and "next-time"
 previews — contributed by people, reviewed by the community, and **published openly** so the data
@@ -14,13 +16,12 @@ can never be quietly locked away or sold off.
 
 ## Why SkipDB is different
 
-|                        | SkipDB                                          | Typical alternatives   |
-| ---------------------- | ----------------------------------------------- | ---------------------- |
-| Source code            | ✅ AGPL-3.0                                     | Often closed           |
-| Submitted data         | ✅ ODbL 1.0, openly published                   | Frequently proprietary |
-| Millisecond precision  | ✅ stored in ms, returned in ms **and** seconds | seconds-only is common |
-| Multi-stream durations | ✅ duration-aware matching + smart offset shift | rarely handled         |
-| Public data dump       | ✅ daily export to GitHub Releases, no user PII | rarely available       |
+|                        | SkipDB                                          | Typical alternatives              |
+| ---------------------- | ----------------------------------------------- | --------------------------------- |
+| Source code            | ✅ AGPL-3.0                                     | Often closed                      |
+| Submitted data         | ✅ ODbL 1.0, openly published                   | Frequently proprietary            |
+| Multi-stream durations | ✅ duration-aware matching + smart offset shift | rarely handled                    |
+| Public data dump       | ✅ daily export to GitHub Releases, no user PII | strict terms blocking data access |
 
 ## Features
 
@@ -143,7 +144,7 @@ pnpm db:resolve   # rebuild the resolved_segments cache
 
 ## Hosting a mirror or fork
 
-See [/dump](/dump) on the live site for full instructions. Short version:
+See [/data](/data) on the live site for full instructions. Short version:
 
 **Read-only mirror** — serves the browse UI and API, disables all writes:
 
