@@ -125,8 +125,56 @@ export function SegmentPanel({
                   <span className="text-xs text-slate-500">{meta.desc}</span>
                 </div>
                 <div className="space-y-2">
-                  {g.items.map((s) =>
-                    editingId === s.id ? (
+                  {g.items.map((s) => {
+                    const isAbsence = s.startMs === 0 && s.endMs === 0;
+                    if (isAbsence) {
+                      return (
+                        <div
+                          key={s.id}
+                          className="card flex items-center justify-between gap-4 p-4"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-300">
+                              No {s.segmentType}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Community marked: this episode has no {s.segmentType}
+                              {s.status === "pending" && (
+                                <span className="ml-2 text-warn">· pending</span>
+                              )}
+                              {s.mine && (
+                                <span className="ml-2 text-signal-bright">
+                                  · yours
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            {s.mine && (
+                              <button
+                                onClick={() => remove(s.id)}
+                                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-rose-300 transition hover:bg-danger/10"
+                              >
+                                Delete
+                              </button>
+                            )}
+                            <VoteButton
+                              dir="up"
+                              active={s.yourVote === 1}
+                              count={s.votesUp}
+                              onClick={() => vote(s.id, 1)}
+                            />
+                            <VoteButton
+                              dir="down"
+                              active={s.yourVote === -1}
+                              count={s.votesDown}
+                              onClick={() => vote(s.id, -1)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+                    return editingId === s.id ? (
                       <div key={s.id} className="card p-4">
                         <SegmentForm
                           mode="edit"
@@ -228,8 +276,8 @@ export function SegmentPanel({
                           />
                         </div>
                       </div>
-                    ),
-                  )}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -485,6 +533,39 @@ function SegmentForm({
         {mode === "edit" && onCancel && (
           <button type="button" className="btn-ghost" onClick={onCancel}>
             Cancel
+          </button>
+        )}
+        {mode === "create" && type !== "outro" && (
+          <button
+            type="button"
+            disabled={busy}
+            className="btn-ghost text-sm text-slate-500"
+            onClick={async () => {
+              if (!isAuthed) {
+                window.location.href = "/auth/signin";
+                return;
+              }
+              setBusy(true);
+              try {
+                const { ok, data } = await onSubmit({
+                  segment_type: type,
+                  start_sec: "0",
+                  end_sec: "0",
+                });
+                if (!ok) {
+                  setMsg({
+                    ok: false,
+                    text: data.error ?? "Something went wrong",
+                  });
+                } else {
+                  setMsg({ ok: true, text: `Marked as no ${type}.` });
+                }
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            No {type}
           </button>
         )}
         {mode === "create" && (

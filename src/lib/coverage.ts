@@ -14,6 +14,8 @@ export interface EpisodeCoverage {
   runtimeMs: number | null;
   // segment type -> { approved, pending }
   coverage: Record<string, { approved: number; pending: number }>;
+  /** True when a community-confirmed "no intro" 0,0 sentinel is approved. */
+  hasIntroAbsence: boolean;
 }
 
 export interface TitleOverview {
@@ -58,6 +60,7 @@ export async function getTitleOverview(
         stillUrl: null,
         runtimeMs: null,
         coverage: {},
+        hasIntroAbsence: false,
       };
       covMap.set(k, row);
     }
@@ -70,7 +73,14 @@ export async function getTitleOverview(
     const row = ensureRow(s.season, s.episode);
     const type = s.segmentType as SegmentTypeName;
     row.coverage[type] ??= { approved: 0, pending: 0 };
-    if (s.status === "approved") {
+
+    // A 0,0 intro segment is the "no intro" sentinel — track separately and
+    // don't add to the normal approved count for that type.
+    if (s.startMs === 0 && s.endMs === 0) {
+      if (s.status === "approved" && type === "intro") {
+        row.hasIntroAbsence = true;
+      }
+    } else if (s.status === "approved") {
       row.coverage[type].approved += 1;
       approvedTotal += 1;
     } else if (s.status === "pending") {

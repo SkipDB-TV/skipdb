@@ -100,6 +100,8 @@ export async function getBestByType(q: SegmentQuery): Promise<BestByType> {
     for (const r of resolved) {
       const type = r.segmentType as SegmentTypeName;
       if (!want.includes(type)) continue;
+      // 0,0 is the "no segment" sentinel — confirmed absence, so return null.
+      if (r.startMs === 0 && r.endMs === 0) continue;
       const adj = adjustForDuration(
         { startMs: r.startMs, endMs: r.endMs, durationMs: r.durationMs },
         null,
@@ -137,6 +139,8 @@ export async function getBestByType(q: SegmentQuery): Promise<BestByType> {
       return b.row.score - a.row.score;
     });
     const winner = inRange[0];
+    // 0,0 is the "no segment" sentinel — confirmed absence, so return null.
+    if (winner.row.startMs === 0 && winner.row.endMs === 0) continue;
     const confidence = computeConfidence({
       agreeCount: countAgreement(
         winner.row,

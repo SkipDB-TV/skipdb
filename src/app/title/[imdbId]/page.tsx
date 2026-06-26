@@ -131,7 +131,10 @@ function CoverageSummary({
       <div className="space-y-3">
         {SEGMENT_ORDER.map((type) => {
           const covered = episodes.filter(
-            (e) => e.season != null && (e.coverage[type]?.approved ?? 0) > 0,
+            (e) =>
+              e.season != null &&
+              ((e.coverage[type]?.approved ?? 0) > 0 ||
+                (type === "intro" && e.hasIntroAbsence)),
           ).length;
           const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
           const meta = SEGMENT_META[type];
@@ -207,7 +210,12 @@ function SeriesBody({
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="flex gap-1.5">
                       {SEGMENT_ORDER.map((t) => (
-                        <CoverageDot key={t} type={t} cov={ep.coverage[t]} />
+                        <CoverageDot
+                          key={t}
+                          type={t}
+                          cov={ep.coverage[t]}
+                          hasAbsence={t === "intro" && ep.hasIntroAbsence}
+                        />
                       ))}
                     </div>
                     <ApiLink
@@ -230,11 +238,23 @@ function SeriesBody({
 function CoverageDot({
   type,
   cov,
+  hasAbsence = false,
 }: {
   type: SegmentTypeName;
   cov?: { approved: number; pending: number };
+  hasAbsence?: boolean;
 }) {
   const meta = SEGMENT_META[type];
+  if (hasAbsence) {
+    return (
+      <span
+        title={`${meta.label}: confirmed no segment`}
+        className="flex h-2.5 w-2.5 items-center justify-center text-[9px] leading-none text-slate-500"
+      >
+        –
+      </span>
+    );
+  }
   const has = cov && cov.approved > 0;
   const pending = cov && cov.pending > 0 && !has;
   return (

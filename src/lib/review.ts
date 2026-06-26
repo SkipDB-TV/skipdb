@@ -70,6 +70,24 @@ export async function reviewSubmission(
     (s) => s.season === candidate.season && s.episode === candidate.episode,
   );
 
+  // If a 0,0 sentinel ("no intro") is already approved, send real intro
+  // submissions to manual review rather than auto-approving them.
+  if (
+    candidate.segmentType === "intro" &&
+    !(candidate.startMs === 0 && candidate.endMs === 0)
+  ) {
+    const hasNoIntroMarker = sameEpisode.some(
+      (s) => s.startMs === 0 && s.endMs === 0,
+    );
+    if (hasNoIntroMarker) {
+      return {
+        status: "pending",
+        autoApproved: false,
+        reasons: ["episode has a confirmed 'no intro' — needs manual review"],
+      };
+    }
+  }
+
   // 2. Consensus with an existing approved segment for this exact episode.
   for (const existing of sameEpisode) {
     // Express both in the candidate's stream timeline before comparing.

@@ -47,7 +47,7 @@
  */
 
 import { json, apiError } from "@/lib/api";
-import { requireStaff } from "@/lib/admin";
+import { getActor } from "@/lib/actor";
 import { ensureTitle } from "@/lib/titles";
 import { recomputeResolved } from "@/lib/resolved";
 import { insertStaffSegment } from "@/lib/staff-submit";
@@ -104,8 +104,11 @@ function resolveMs(ms?: number, flex?: z.infer<typeof flexTime>): number | null 
 // ---------------------------------------------------------------------------
 
 export async function POST(req: Request) {
-  const staff = await requireStaff();
-  if (!staff) return apiError("Forbidden", 403);
+  const actor = await getActor(req);
+  const role = actor?.user?.role;
+  if (!actor || (role !== "moderator" && role !== "admin"))
+    return apiError("Forbidden — staff API key or session required", 403);
+  const staff = { id: actor.user.id, role: role as "moderator" | "admin" };
 
   let body: unknown;
   try {

@@ -9,3 +9,4 @@ out
 coverage
 next-env.d.ts
 *.tsbuildinfo
+/import

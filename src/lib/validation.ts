@@ -105,6 +105,8 @@ export function validateSegmentBounds(input: {
   segmentType: SegmentTypeName;
 }): string | null {
   const { startMs, endMs, durationMs, segmentType } = input;
+  // 0,0 is the sentinel for "confirmed no segment of this type" — always valid.
+  if (startMs === 0 && endMs === 0) return null;
   if (startMs < 0) return "start must be >= 0";
   if (endMs <= startMs) return "end must be after start";
   const len = endMs - startMs;
