@@ -53,10 +53,12 @@ export async function GET(req: Request) {
   const remote = await searchTitles(q);
 
   // Local DB matches by name (works even without TMDB).
+  // Escape LIKE metacharacters so a literal "%" or "_" in the query isn't treated as a wildcard.
+  const escaped = q.replace(/[\\%_]/g, "\\$&");
   const local = await db
     .select()
     .from(titles)
-    .where(or(ilike(titles.name, `%${q}%`), ilike(titles.imdbId, `%${q}%`)))
+    .where(or(ilike(titles.name, `%${escaped}%`), ilike(titles.imdbId, `%${escaped}%`)))
     .limit(10);
 
   return json({

@@ -7,6 +7,7 @@ import { recomputeResolved } from "@/lib/resolved";
 import { and, eq, sql } from "drizzle-orm";
 import type { SegmentTypeName } from "@/lib/config";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,9 @@ export async function POST(
   if (READ_ONLY) return readOnlyError();
   const actor = await getActor(req);
   if (!actor) return apiError("Authentication required.", 401);
+
+  const rl = rateLimit(`vote:${actor.user.id}`, 60);
+  if (!rl.ok) return apiError("Rate limit exceeded", 429);
 
   const { id } = await params;
   const segmentId = Number(id);
@@ -42,6 +46,10 @@ export async function POST(
   if (!segment) return apiError("Segment not found", 404);
 
   const userId = actor.user.id;
+
+  if (segment.submittedBy === userId)
+    return apiError("You cannot vote on your own segment", 403);
+
   const existing = (
     await db
       .select()
