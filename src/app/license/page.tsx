@@ -41,6 +41,36 @@ export default function LicensePage() {
       </div>
 
       <div className="card mt-6 p-6">
+        <div className="flex items-center gap-4">
+          <a
+            href="https://www.themoviedb.org"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <img src="/tmdb-logo.svg" alt="TMDB" width={80} height={18} />
+          </a>
+          <h2 className="text-lg font-semibold text-white">
+            Third-party metadata
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-slate-400">
+          This website uses TMDB and the TMDB APIs but is not endorsed,
+          certified, or otherwise approved by TMDB. Title names, posters, and
+          episode metadata are sourced from{" "}
+          <a
+            href="https://www.themoviedb.org"
+            className="text-skip hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            The Movie Database
+          </a>
+          . TMDB data is not included in the SkipDB data dump — only
+          crowdsourced timestamps are exported.
+        </p>
+      </div>
+
+      <div className="card mt-6 p-6">
         <h2 className="text-lg font-semibold text-white">Why two licenses?</h2>
         <p className="mt-2 text-sm text-slate-400">
           Code and data are different things. AGPL keeps the software open even

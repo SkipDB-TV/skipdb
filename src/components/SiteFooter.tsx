@@ -62,12 +62,26 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="container-page mt-8 flex flex-col gap-1 text-xs text-slate-500">
+      <div className="container-page mt-8 flex flex-col gap-4 text-xs text-slate-500">
         <p>
           Code: <span className="text-slate-300">AGPL-3.0</span> · Data:{" "}
           <span className="text-slate-300">ODbL 1.0</span> unless you have
           explicit permission.
         </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="https://www.themoviedb.org"
+            target="_blank"
+            rel="noreferrer"
+            className="opacity-70 transition hover:opacity-100"
+          >
+            <img src="/tmdb-logo.svg" alt="TMDB" width={64} height={14} />
+          </a>
+          <p>
+            This website uses TMDB and the TMDB APIs but is not endorsed,
+            certified, or otherwise approved by TMDB.
+          </p>
+        </div>
       </div>
     </footer>
   );
