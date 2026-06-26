@@ -23,9 +23,16 @@ related metadata), you agree to the following:
    alike (any derivative database must also be released under ODbL 1.0 or a compatible open
    license). The dataset cannot be relicensed as proprietary.
 
-5. **No warranty.** The data is provided "as is". SkipDB makes no guarantees about accuracy.
+5. **Service providers must reciprocate.** Anyone who operates a public app, API, service, or
+   hosted product and uses SkipDB data to seed, validate, or augment their own private
+   skip-segment database is required to make their corresponding skip-segment data publicly
+   available under ODbL 1.0 or a compatible open license. Read-only use of the API to display
+   skip times to end users is not affected. Full terms are in `DATA-LICENSE` (Additional Term:
+   Service Provider Reciprocity).
 
-6. **Moderation.** Submissions may be reviewed, approved, rejected, edited, or removed to maintain
+6. **No warranty.** The data is provided "as is". SkipDB makes no guarantees about accuracy.
+
+7. **Moderation.** Submissions may be reviewed, approved, rejected, edited, or removed to maintain
    data quality.
 
 The SkipDB application **source code** is licensed separately under **AGPL-3.0** (see `LICENSE`).

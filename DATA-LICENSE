@@ -1,4 +1,5 @@
 SkipDB Database & API — Data License
+=====================================
 
 The SkipDB database contents and the data served by the API are licensed under
 the Open Database License (ODbL) 1.0, unless you have obtained explicit written
@@ -12,7 +13,7 @@ agreement. The application source code is licensed separately under AGPL-3.0
 
 Summary and full legal text: https://opendatacommons.org/licenses/odbl/1-0/
 
-Key terms:
+Key ODbL terms:
 - Attribution: You must attribute SkipDB when using or redistributing the data.
 - Share-Alike: Any derivative database you produce from this data must also be
   released under ODbL 1.0 (or a compatible open license).
@@ -22,3 +23,83 @@ Key terms:
 ODbL is designed specifically for databases. "Produced Works" (e.g. an app that
 queries the database) are not affected by the Share-Alike clause — only
 derivative databases that contain a substantial extract of SkipDB data.
+
+-------------------------------------------------------------------------------
+
+Additional Term: Service Provider Reciprocity
+---------------------------------------------
+
+This obligation applies in addition to the ODbL 1.0 terms above and constitutes
+a condition of your right to use the SkipDB database. It is accepted by anyone
+who accesses the API, downloads a data dump, or otherwise uses the database.
+
+1. TRIGGER
+
+   This obligation is triggered when you operate any public-facing app, API,
+   service, plugin, media player, browser extension, or hosted product that:
+
+   (a) imports, merges, deduplicates, validates against, or corrects your own
+       skip-segment records using data from SkipDB; or
+
+   (b) uses SkipDB data to seed, populate, or benchmark a private or proprietary
+       database of skip-segment records for the same works.
+
+   Read-only use of the SkipDB API solely to display skip segments to end users,
+   where you do not maintain a private database of the same records, does NOT
+   trigger this obligation.
+
+2. OBLIGATION
+
+   If the trigger applies, the complete set of skip-segment records used by your
+   service for the same titles, episodes, and segment types (intro, outro, recap,
+   preview, or functional equivalents) must be made Publicly Available, meaning:
+
+   (a) downloadable in a machine-readable format (JSON or CSV) without
+       authentication, paywalls, or rate limits that prevent bulk access;
+
+   (b) updated at a cadence no less frequent than your service consumes or
+       updates its own skip-segment data; and
+
+   (c) licensed under ODbL 1.0 or a compatible open data license that permits
+       unrestricted redistribution, adaptation, and derivative use.
+
+3. HOSTED SERVICES
+
+   For the avoidance of doubt, this obligation applies to server-side databases
+   used by hosted services and does not require distribution of software. The
+   obligation is on the data, not the code.
+
+4. SAFE HARBOUR
+
+   This obligation does not apply to skip-segment data you can demonstrate was
+   independently collected without reference to SkipDB, and which has never been
+   imported, merged, validated against, corrected by, or otherwise derived from
+   the SkipDB database.
+
+5. SCOPE
+
+   The obligation covers skip-segment records only (time offsets identifying
+   skippable portions of media works, keyed by media identifier). It does not
+   extend to other categories of data your service may hold, such as user data,
+   recommendation data, or streaming metadata.
+
+6. DERIVATIVE DATABASES
+
+   Any Derivative Database (as defined in ODbL 1.0 Section 1.4) that
+   incorporates a substantial portion of this database must be made available
+   under ODbL 1.0 AND must carry forward these Additional Terms — including this
+   Service Provider Reciprocity obligation — unchanged and in full. You may not
+   impose additional restrictions on recipients of the Derivative Database that
+   would prevent them from complying with these terms, nor may you omit these
+   Additional Terms when relicensing a Derivative Database.
+
+   For the avoidance of doubt: satisfying ODbL 1.0 Share-Alike alone (Section
+   4.4) is necessary but not sufficient. The Additional Terms must also be
+   preserved in any Derivative Database.
+
+7. ENFORCEMENT
+
+   Violation of this term terminates your license to use the SkipDB database.
+   SkipDB reserves all rights to enforce this condition to the fullest extent
+   permitted by applicable law, including under contract, database right (EU
+   Directive 96/9/EC), and any applicable unfair competition law.

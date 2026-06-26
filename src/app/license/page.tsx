@@ -22,31 +22,46 @@ export default function LicensePage() {
         </div>
         <div className="card p-6">
           <span className="chip bg-skip/15 text-skip-bright">Data</span>
-          <h2 className="mt-3 text-xl font-semibold text-white">ODbL 1.0</h2>
+          <h2 className="mt-3 text-xl font-semibold text-white">
+            ODbL 1.0 + Service Provider Reciprocity
+          </h2>
           <p className="mt-2 text-sm text-slate-400">
             The database and API contents are licensed under the Open Database
-            License 1.0, unless you have explicit written permission otherwise.
-            Use it with attribution and share alike — any derivative database
-            must also be released under ODbL 1.0.
+            License 1.0. Use it with attribution and share alike — any
+            derivative database must also be released under ODbL 1.0.
           </p>
-          <a
-            href="https://opendatacommons.org/licenses/odbl/1-0/"
-            className="mt-3 inline-block text-sm text-skip hover:underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read the full license →
-          </a>
+          <p className="mt-2 text-sm text-slate-400">
+            <strong className="text-slate-200">Additional term:</strong> if you
+            operate a public app, API, or hosted service and use SkipDB data to
+            seed, validate, or augment a private skip-segment database, you must
+            make your corresponding skip-segment data publicly available under
+            ODbL 1.0 or a compatible open license. Read-only API use to display
+            skip times to end users is not affected.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <a
+              href="https://opendatacommons.org/licenses/odbl/1-0/"
+              className="text-sm text-skip hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ODbL 1.0 full text →
+            </a>
+            <a
+              href="https://github.com/SkipDB-TV/skipdb/blob/main/DATA-LICENSE"
+              className="text-sm text-skip hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Service Provider Reciprocity term →
+            </a>
+          </div>
         </div>
       </div>
 
       <div className="card mt-6 p-6">
         <div className="flex items-center gap-4">
-          <a
-            href="https://www.themoviedb.org"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href="https://www.themoviedb.org" target="_blank" rel="noreferrer">
             <img src="/tmdb-logo.svg" alt="TMDB" width={80} height={18} />
           </a>
           <h2 className="text-lg font-semibold text-white">
@@ -75,9 +90,9 @@ export default function LicensePage() {
         <p className="mt-2 text-sm text-slate-400">
           Code and data are different things. AGPL keeps the software open even
           when run as a hosted service. ODbL is designed specifically for
-          databases — it requires attribution and that any derivative database be
-          shared under the same terms, preventing anyone from extracting the data
-          and locking it away in a proprietary product. The public{" "}
+          databases — it requires attribution and that any derivative database
+          be shared under the same terms, preventing anyone from extracting the
+          data and locking it away in a proprietary product. The public{" "}
           <a href="/dump" className="text-skip hover:underline">
             data dump
           </a>{" "}
