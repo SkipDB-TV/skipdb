@@ -9,6 +9,7 @@ import { parseTimeToMs, roundTime } from "@/lib/time";
 import { reviewSubmission } from "@/lib/review";
 import { recomputeResolved } from "@/lib/resolved";
 import type { SegmentTypeName } from "@/lib/config";
+import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 
 export const runtime = "nodejs";
 
@@ -42,6 +43,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (READ_ONLY) return readOnlyError();
   const { id } = await params;
   const loaded = await loadAuthorized(req, id);
   if (loaded.error) return loaded.error;
@@ -157,6 +159,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (READ_ONLY) return readOnlyError();
   const { id } = await params;
   const loaded = await loadAuthorized(req, id);
   if (loaded.error) return loaded.error;

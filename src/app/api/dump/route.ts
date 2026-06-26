@@ -30,7 +30,10 @@ export async function GET(req: Request) {
   // The dump is a heavy full-table read; cap how often a client can pull it.
   const rl = rateLimit(`dump:${clientIp(req)}`, 6);
   if (!rl.ok)
-    return apiError("Rate limit exceeded. The dump is cached for an hour.", 429);
+    return apiError(
+      "Rate limit exceeded. The dump is cached for an hour.",
+      429,
+    );
 
   const rows = await db
     .select({
@@ -62,7 +65,7 @@ export async function GET(req: Request) {
     {
       license: "CC BY-NC-SA 4.0",
       license_url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-      attribution: "SkipDB — https://github.com (open data)",
+      attribution: "SkipDB — https://github.com/SkipDB-TV/skipdb (open data)",
       generated_at: new Date().toISOString(),
       count: data.length,
       note: "Contains no user data. By using this data you agree to CC BY-NC-SA 4.0 unless you have explicit permission.",

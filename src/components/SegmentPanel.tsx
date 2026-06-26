@@ -6,6 +6,7 @@ import { msToClock, msToSec, parseTimeToMs } from "@/lib/time";
 import { SEGMENT_META, SEGMENT_ORDER } from "@/lib/segment-types";
 import { Tooltip } from "./Tooltip";
 import type { SegmentTypeName } from "@/lib/config";
+import { READ_ONLY } from "@/lib/read-only";
 
 export interface PanelSegment {
   id: number;
@@ -149,7 +150,7 @@ export function SegmentPanel({
                               )}
                             </p>
                           </div>
-                          <div className="flex shrink-0 items-center gap-1">
+                          {!READ_ONLY && <div className="flex shrink-0 items-center gap-1">
                             {s.mine && (
                               <button
                                 onClick={() => remove(s.id)}
@@ -170,7 +171,7 @@ export function SegmentPanel({
                               count={s.votesDown}
                               onClick={() => vote(s.id, -1)}
                             />
-                          </div>
+                          </div>}
                         </div>
                       );
                     }
@@ -245,7 +246,7 @@ export function SegmentPanel({
                             )}
                           </p>
                         </div>
-                        <div className="flex shrink-0 items-center gap-1">
+                        {!READ_ONLY && <div className="flex shrink-0 items-center gap-1">
                           {s.mine && (
                             <>
                               <button
@@ -274,7 +275,7 @@ export function SegmentPanel({
                             count={s.votesDown}
                             onClick={() => vote(s.id, -1)}
                           />
-                        </div>
+                        </div>}
                       </div>
                     );
                   })}
@@ -286,7 +287,7 @@ export function SegmentPanel({
       )}
 
       {/* New submission */}
-      <div className="card p-6">
+      {!READ_ONLY && <div className="card p-6">
         <h3 className="text-lg font-semibold text-white">
           Contribute a segment
         </h3>
@@ -318,7 +319,7 @@ export function SegmentPanel({
             return { ok: res.ok, data };
           }}
         />
-      </div>
+      </div>}
     </div>
   );
 }

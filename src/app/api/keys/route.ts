@@ -1,5 +1,6 @@
 import { json, apiError } from "@/lib/api";
 import { auth } from "@/lib/auth";
+import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 import {
   generateApiKey,
   revokeApiKeys,
@@ -18,6 +19,7 @@ export async function GET() {
 
 // Generate (or reset) the user's API key. Returns the plaintext key ONCE.
 export async function POST() {
+  if (READ_ONLY) return readOnlyError();
   const session = await auth();
   if (!session?.user?.id) return apiError("Authentication required.", 401);
   const { key, prefix } = await generateApiKey(session.user.id);

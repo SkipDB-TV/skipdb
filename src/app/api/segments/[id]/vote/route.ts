@@ -6,6 +6,7 @@ import { voteSchema } from "@/lib/validation";
 import { recomputeResolved } from "@/lib/resolved";
 import { and, eq, sql } from "drizzle-orm";
 import type { SegmentTypeName } from "@/lib/config";
+import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (READ_ONLY) return readOnlyError();
   const actor = await getActor(req);
   if (!actor) return apiError("Authentication required.", 401);
 

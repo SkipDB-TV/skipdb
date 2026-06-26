@@ -4,6 +4,7 @@ import { json, apiError, preflight, LICENSE_NOTICE } from "@/lib/api";
 import { getBestByType } from "@/lib/segments";
 import type { AdjustMode } from "@/lib/duration";
 import { getIntroLengthEstimate } from "@/lib/estimate";
+import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 import { recomputeResolved } from "@/lib/resolved";
 import { submitSchema, validateSegmentBounds } from "@/lib/validation";
 import { getActor } from "@/lib/actor";
@@ -98,6 +99,7 @@ export async function GET(req: Request) {
 
 // --- Submit (auth: session or API key) ---
 export async function POST(req: Request) {
+  if (READ_ONLY) return readOnlyError();
   const actor = await getActor(req);
   if (!actor)
     return apiError(

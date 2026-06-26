@@ -7,10 +7,12 @@ import { hashPassword } from "@/lib/password";
 import { createUserSession } from "@/lib/session";
 import { isAdminEmail } from "@/lib/admin-emails";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  if (READ_ONLY) return readOnlyError();
   const rl = rateLimit(`register:${clientIp(req)}`, 10);
   if (!rl.ok) return apiError("Too many attempts. Try again shortly.", 429);
 

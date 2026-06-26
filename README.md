@@ -9,17 +9,18 @@ can never be quietly locked away or sold off.
 
 > SkipDB's whole point is that the data stays open. Other services collect community submissions
 > but keep the resulting database proprietary so they can monetize it or shut it down. SkipDB keeps
-> both the code **and** the data open, with a public data dump (planned, SponsorBlock-style).
+> both the code **and** the data open, with a daily public data dump — so the data survives even if
+> this instance disappears.
 
 ## Why SkipDB is different
 
-| | SkipDB | Typical alternatives |
-|---|---|---|
-| Source code | ✅ AGPL-3.0 | Often closed |
-| Submitted data | ✅ CC BY-NC-SA 4.0, openly published | Frequently proprietary |
-| Millisecond precision | ✅ stored in ms, returned in ms **and** seconds | seconds-only is common |
-| Multi-stream durations | ✅ duration-aware matching + smart offset shift | rarely handled |
-| Public data dump | ✅ planned (no user PII) | rarely available |
+|                        | SkipDB                                          | Typical alternatives   |
+| ---------------------- | ----------------------------------------------- | ---------------------- |
+| Source code            | ✅ AGPL-3.0                                     | Often closed           |
+| Submitted data         | ✅ CC BY-NC-SA 4.0, openly published            | Frequently proprietary |
+| Millisecond precision  | ✅ stored in ms, returned in ms **and** seconds | seconds-only is common |
+| Multi-stream durations | ✅ duration-aware matching + smart offset shift | rarely handled         |
+| Public data dump       | ✅ daily export to GitHub Releases, no user PII | rarely available       |
 
 ## Features
 
@@ -73,7 +74,8 @@ pnpm dev   # http://localhost:3000
 
 Without OAuth/SMTP/TMDB keys the app still runs: **email + password sign-in works out of the box**
 (only `AUTH_SECRET` is required), and you can always enter IMDb IDs manually (TMDB just adds search
-+ artwork). OAuth and magic-link sign-in light up automatically when their env vars are set.
+
+- artwork). OAuth and magic-link sign-in light up automatically when their env vars are set.
 
 To make yourself an admin, set `ADMIN_EMAILS=you@example.com` in `.env` before signing in.
 
@@ -98,18 +100,19 @@ Reading is open (rate-limited). All timestamps are returned in **both** `start_m
 # Fetch approved segments for an episode
 curl "http://localhost:3000/api/segments?imdb_id=tt0903747&season=1&episode=1"
 
-# Same, but for a specific stream length (ms) — enables offset-aware matching
-curl "http://localhost:3000/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=1412000"
+# Same, but for a specific stream length in seconds — enables offset-aware matching
+curl "http://localhost:3000/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=2820"
 
 # Submit (needs a logged-in session cookie or an API key)
 curl -X POST http://localhost:3000/api/segments \
   -H "Authorization: Bearer skdb_xxx" \
   -H "Content-Type: application/json" \
   -d '{"imdb_id":"tt0903747","season":1,"episode":1,"segment_type":"intro",
-       "start_ms":61000,"end_ms":91000,"duration_ms":1412000}'
+       "start_ms":61000,"end_ms":91000,"duration_ms":2820000}'
 ```
 
 `start`/`end` also accept seconds or clock strings (`mm:ss`, `hh:mm:ss`) via `start_sec`/`end_sec`.
+`duration` in the GET API is in **seconds**; `duration_ms` in the POST body is in milliseconds.
 
 Full docs live at `/docs` when running.
 
@@ -123,11 +126,42 @@ src/
   components/     UI components + design system
 ```
 
-## Data dump (planned)
+## Data dump
 
-The schema is built so a public dump is a clean query over `segments` joined to title/episode
-metadata with **no user PII**. A SponsorBlock-style downloadable dump + mirror is on the roadmap;
-the `/api/dump` endpoint is a placeholder for now.
+A daily GitHub Actions workflow exports all segments to `skipdb-dump.json` and publishes it to
+GitHub Releases (`data-latest` tag). The dump includes all statuses and vote counts — no user PII.
+The `/api/dump` endpoint redirects to this file when `DUMP_URL` is set.
+
+```bash
+# Export locally
+pnpm db:export
+
+# Seed a fresh database from the public dump
+pnpm db:import https://github.com/SkipDB-TV/skipdb/releases/download/data-latest/skipdb-dump.json
+pnpm db:resolve   # rebuild the resolved_segments cache
+```
+
+## Hosting a mirror or fork
+
+See [/dump](/dump) on the live site for full instructions. Short version:
+
+**Read-only mirror** — serves the browse UI and API, disables all writes:
+
+```bash
+# Set in your deployment environment
+NEXT_PUBLIC_READ_ONLY=true
+DUMP_URL=https://github.com/SkipDB-TV/skipdb/releases/download/data-latest/skipdb-dump.json
+NEXT_PUBLIC_DUMP_URL=$DUMP_URL
+```
+
+**Full fork** — accepts submissions independently:
+
+```bash
+pnpm db:migrate
+pnpm db:import <dump-url>   # seed from the public dump
+pnpm db:resolve
+# deploy with your own DATABASE_URL + AUTH_SECRET etc.
+```
 
 ## Contributing & terms
 

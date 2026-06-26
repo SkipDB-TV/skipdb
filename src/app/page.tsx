@@ -148,13 +148,9 @@ export default async function HomePage() {
             <Link href="/docs" className="btn-primary">
               Read the API docs
             </Link>
-            <a
-              href={process.env.NEXT_PUBLIC_DUMP_URL ?? "/api/dump"}
-              className="btn-ghost"
-              title="CC BY-NC-SA 4.0 — all approved segments, no user data"
-            >
-              Download the data
-            </a>
+            <Link href="/dump" className="btn-ghost">
+              The data
+            </Link>
           </div>
         </div>
         <ApiDemo />

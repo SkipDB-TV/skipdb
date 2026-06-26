@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { Brand } from "./Brand";
+import { READ_ONLY } from "@/lib/read-only";
+import { BASE_URL } from "@/lib/urls";
 
 export async function SiteNav() {
   const session = await auth();
@@ -9,6 +11,14 @@ export async function SiteNav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/5 bg-midnight-950/80 backdrop-blur">
+      {READ_ONLY && (
+        <div className="border-b border-warn/20 bg-warn/5 px-4 py-1.5 text-center text-xs text-warn">
+          Read-only mirror —{" "}
+          <a href={`${BASE_URL}`} className="underline hover:text-white">
+            submit and vote at {BASE_URL}
+          </a>
+        </div>
+      )}
       <div className="container-page flex h-16 items-center justify-between gap-4">
         <Brand />
         <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
@@ -18,8 +28,8 @@ export async function SiteNav() {
           <Link href="/docs" className="hover:text-white">
             API
           </Link>
-          <Link prefetch={false} href="/api/dump" className="hover:text-white">
-            Data dump
+          <Link href="/dump" className="hover:text-white">
+            Data
           </Link>
           {isStaff && (
             <Link href="/admin" className="text-skip hover:text-skip-bright">
@@ -28,7 +38,7 @@ export async function SiteNav() {
           )}
         </nav>
         <div className="flex items-center gap-3">
-          {user ? (
+          {READ_ONLY ? null : user ? (
             <>
               <Link
                 href="/account"
