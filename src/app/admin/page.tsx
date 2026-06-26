@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/admin";
 import { db } from "@/db";
@@ -59,9 +60,14 @@ export default async function AdminPage() {
     <div className="container-page py-10">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">Review queue</h1>
-        <span className="chip bg-warn/15 text-amber-300">
-          {items.length} pending
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="chip bg-warn/15 text-amber-300">
+            {items.length} pending
+          </span>
+          <Link href="/admin/bulk" className="btn-ghost text-sm">
+            Bulk submit
+          </Link>
+        </div>
       </div>
       <p className="mt-2 text-sm text-slate-400">
         Approve good submissions or reject bad ones. Approvals award the
