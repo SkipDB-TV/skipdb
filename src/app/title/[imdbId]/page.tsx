@@ -198,6 +198,7 @@ function SeriesBody({
                   <Link
                     href={`/title/${imdbId}/${ep.season}/${ep.episode}`}
                     className="flex min-w-0 flex-1 items-center gap-3"
+                    prefetch={false}
                   >
                     <span className="mono shrink-0 text-sm text-slate-500">
                       S{String(ep.season).padStart(2, "0")}E

@@ -148,6 +148,7 @@ function TitleCard({
     <Link
       href={href}
       className="card group overflow-hidden transition hover:shadow-glow"
+      prefetch={false}
     >
       <div className="aspect-[2/3] w-full bg-midnight-800">
         {posterUrl ? (
