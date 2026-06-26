@@ -4,6 +4,7 @@ import { titles, segments } from "@/db/schema";
 import { sql, eq } from "drizzle-orm";
 import { SearchBox } from "@/components/SearchBox";
 import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
+import { ApiDemo } from "@/components/ApiDemo";
 
 async function getHomeStats() {
   const [row] = await db
@@ -152,25 +153,7 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
-        <pre className="card overflow-x-auto p-5 text-xs leading-relaxed text-slate-300">
-          <code className="mono">{`# Best segments for an episode on a 47:00 stream
-curl "https://api.skipdb.tv/api/segments?\\
-  imdb_id=tt0903747&season=1&episode=1&duration=2820000"
-
-{
-  "segments": {
-    "intro": {
-      "start_ms": 61000, "end_ms": 91000,
-      "start_sec": 61,   "end_sec": 91,
-      "match": "exact", "adjusted": false,
-      "confidence": 0.93
-    },
-    "recap": null,
-    "outro": { "start_ms": 2760000, ... },
-    "preview": { "excluded": "duration_mismatch" }
-  }
-}`}</code>
-        </pre>
+        <ApiDemo />
       </section>
     </div>
   );
