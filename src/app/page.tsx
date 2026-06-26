@@ -1,8 +1,41 @@
 import Link from "next/link";
+import { db } from "@/db";
+import { titles, segments } from "@/db/schema";
+import { sql, eq } from "drizzle-orm";
 import { SearchBox } from "@/components/SearchBox";
 import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
 
-export default function HomePage() {
+async function getHomeStats() {
+  const [row] = await db
+    .select({
+      titleCount: sql<number>`count(distinct ${titles.id})`,
+      segmentCount: sql<number>`count(${segments.id}) filter (
+        where ${segments.status} = 'approved'
+        and not (${segments.startMs} = 0 and ${segments.endMs} = 0)
+      )`,
+      episodeCount: sql<number>`count(distinct (${segments.imdbId}, coalesce(${segments.season}, -1), coalesce(${segments.episode}, -1))) filter (
+        where ${segments.status} = 'approved'
+        and not (${segments.startMs} = 0 and ${segments.endMs} = 0)
+      )`,
+    })
+    .from(titles)
+    .leftJoin(segments, eq(segments.titleId, titles.id));
+
+  return {
+    titles: Number(row.titleCount),
+    segments: Number(row.segmentCount),
+    episodes: Number(row.episodeCount),
+  };
+}
+
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+export default async function HomePage() {
+  const stats = await getHomeStats();
   return (
     <div className="container-page py-16">
       {/* Hero */}
@@ -37,8 +70,22 @@ export default function HomePage() {
         </p>
       </section>
 
+      {/* Stats */}
+      <section className="mt-14 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border border-white/5 bg-white/3">
+        {[
+          { value: fmt(stats.segments), label: "approved segments" },
+          { value: fmt(stats.titles), label: "titles" },
+          { value: fmt(stats.episodes), label: "episodes covered" },
+        ].map((s) => (
+          <div key={s.label} className="py-6 text-center">
+            <p className="text-3xl font-bold text-skip">{s.value}</p>
+            <p className="mt-1 text-sm text-slate-400">{s.label}</p>
+          </div>
+        ))}
+      </section>
+
       {/* Why different */}
-      <section className="mt-20 grid gap-4 md:grid-cols-3">
+      <section className="mt-16 grid gap-4 md:grid-cols-3">
         {[
           {
             title: "The data stays open",
