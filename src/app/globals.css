@@ -81,3 +81,17 @@
     transparent
   );
 }
+
+/* Navigation progress bar sweep */
+@keyframes nav-progress {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(500%); }
+}
+.nav-progress {
+  animation: nav-progress 1.2s ease-in-out infinite;
+}
+
+/* Skeleton shimmer (used in loading.tsx files) */
+.skeleton {
+  @apply rounded-lg bg-white/8 animate-pulse;
+}
