@@ -45,6 +45,8 @@ export default function DocsPage() {
     <div className="container-page py-10">
       <h1 className="text-3xl font-bold text-white">API documentation</h1>
       <p className="mt-2 max-w-2xl text-slate-400">
+        Base URL:{" "}
+        <code className="mono text-slate-300">https://api.skipdb.tv</code>.
         Reading is open and rate-limited ({config.limits.readPerMinute}{" "}
         req/min). Writing requires a logged-in session or an API key (
         {config.limits.writePerMinute} req/min). All timestamps are returned in
@@ -78,7 +80,7 @@ export default function DocsPage() {
             yours). <span className="mono">confidence</span> is 0–1, based on how
             many submissions agree plus community votes.
           </p>
-          <Code>{`curl "/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=2820000"
+          <Code>{`curl "https://api.skipdb.tv/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=2820000"
 
 {
   "imdb_id": "tt0903747", "season": 1, "episode": 1,
@@ -110,7 +112,7 @@ export default function DocsPage() {
             </a>
             ).
           </p>
-          <Code>{`curl -X POST /api/segments \\
+          <Code>{`curl -X POST https://api.skipdb.tv/api/segments \\
   -H "Authorization: Bearer skdb_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{

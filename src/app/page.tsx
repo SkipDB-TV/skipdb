@@ -63,8 +63,8 @@ export default async function HomePage() {
             Breaking Bad
           </Link>{" "}
           or{" "}
-          <Link href="/title/tt0245429" className="text-skip hover:underline">
-            Spirited Away
+          <Link href="/title/tt1632701" className="text-skip hover:underline">
+            Suits
           </Link>
           .
         </p>
@@ -154,7 +154,7 @@ export default async function HomePage() {
         </div>
         <pre className="card overflow-x-auto p-5 text-xs leading-relaxed text-slate-300">
           <code className="mono">{`# Best segments for an episode on a 47:00 stream
-curl "https://skipdb.tv/api/segments?\\
+curl "https://api.skipdb.tv/api/segments?\\
   imdb_id=tt0903747&season=1&episode=1&duration=2820000"
 
 {

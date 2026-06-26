@@ -16,7 +16,7 @@ export function ApiLink({
   const params = new URLSearchParams({ imdb_id: imdbId });
   if (season != null) params.set("season", String(season));
   if (episode != null) params.set("episode", String(episode));
-  const href = `/api/segments?${params.toString()}`;
+  const href = `https://api.skipdb.tv/api/segments?${params.toString()}`;
 
   if (variant === "inline") {
     return (
