@@ -1,0 +1,1 @@
+CREATE INDEX "segments_type_status_idx" ON "segments" USING btree ("imdb_id","segment_type","status");

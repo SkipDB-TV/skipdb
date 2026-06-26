@@ -218,6 +218,11 @@ export const segments = pgTable(
       table.episode,
       table.status,
     ),
+    byTypeStatus: index("segments_type_status_idx").on(
+      table.imdbId,
+      table.segmentType,
+      table.status,
+    ),
     byTitle: index("segments_title_idx").on(table.titleId),
     byStatus: index("segments_status_idx").on(table.status),
   }),

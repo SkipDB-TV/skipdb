@@ -29,6 +29,13 @@
       "when": 1782419321844,
       "tag": "0003_bumpy_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782478829947,
+      "tag": "0004_gifted_shape",
+      "breakpoints": true
     }
   ]
 }

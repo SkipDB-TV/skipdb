@@ -7,13 +7,17 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set. Copy .env.example to .env.");
 }
 
-// Reuse the pool across hot reloads in dev.
+// Reuse the pool across invocations (dev hot reloads + warm Vercel Lambdas).
 const globalForDb = globalThis as unknown as { pool?: Pool };
 
 const pool =
-  globalForDb.pool ?? new Pool({ connectionString, max: 10 });
+  globalForDb.pool ??
+  new Pool({
+    connectionString,
+    max: 2, // serverless: one request per instance, small pool avoids connection exhaustion
+  });
 
-if (process.env.NODE_ENV !== "production") globalForDb.pool = pool;
+globalForDb.pool = pool;
 
 export const db = drizzle(pool, { schema });
 export { schema };

@@ -76,7 +76,15 @@ export async function GET(req: Request) {
       // offer a manual "skip intro" button of roughly the right duration.
       intro_length_estimate_ms: introLengthEstimateMs,
     },
-    { headers: rateLimitHeaders(rl) },
+    {
+      headers: {
+        // Cache at Vercel's CDN keyed by full URL (imdb_id + season + episode +
+        // duration_ms + adjust). Segment data only changes on approve/reject events
+        // so 30s fresh + 5min stale is safe and removes the DB round-trip entirely
+        // for popular episodes.
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=300",
+      },
+    },
   );
 }
 
