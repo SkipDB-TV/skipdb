@@ -1,0 +1,48 @@
+name: Export data dump
+
+on:
+  schedule:
+    # Everyday at 03:00 UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create/update releases
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate dump
+        run: pnpm db:export
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Upload to GitHub Releases (rolling data-latest tag)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: data-latest
+          name: "Data dump (latest)"
+          body: |
+            Auto-generated daily export of all SkipDB segments (all statuses) with vote counts. No user data.
+
+            Import into a fresh instance: `pnpm db:import <url>`, then `pnpm db:resolve`.
+
+            Licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+          files: |
+            skipdb-dump.json
+          make_latest: false
+          prerelease: false

@@ -21,6 +21,12 @@ export function OPTIONS() {
  * so this stays a clean PII-free query.
  */
 export async function GET(req: Request) {
+  // If a pre-generated dump URL is configured, redirect there — no DB query needed.
+  const dumpUrl = process.env.DUMP_URL;
+  if (dumpUrl) {
+    return Response.redirect(dumpUrl, 302);
+  }
+
   // The dump is a heavy full-table read; cap how often a client can pull it.
   const rl = rateLimit(`dump:${clientIp(req)}`, 6);
   if (!rl.ok)

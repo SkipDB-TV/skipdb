@@ -10,3 +10,4 @@ coverage
 next-env.d.ts
 *.tsbuildinfo
 /import
+skipdb-dump.json
