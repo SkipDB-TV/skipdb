@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { segments, moderationLog } from "@/db/schema";
 import { json, apiError, preflight, LICENSE_NOTICE } from "@/lib/api";
 import { getBestByType } from "@/lib/segments";
+import type { AdjustMode } from "@/lib/duration";
 import { recomputeResolved } from "@/lib/resolved";
 import { submitSchema, validateSegmentBounds } from "@/lib/validation";
 import { getActor } from "@/lib/actor";
@@ -31,12 +32,18 @@ export async function GET(req: Request) {
   const durationRaw =
     url.searchParams.get("duration") ?? url.searchParams.get("duration_ms");
   const typeRaw = url.searchParams.get("type") ?? undefined;
+  const adjustRaw = url.searchParams.get("adjust") ?? "conservative";
 
   if (typeRaw && !config.segmentTypes.includes(typeRaw as never))
     return apiError(
       `type must be one of: ${config.segmentTypes.join(", ")}`,
       400,
     );
+
+  const ADJUST_MODES = ["conservative", "greedy", "none"] as const;
+  if (!ADJUST_MODES.includes(adjustRaw as AdjustMode))
+    return apiError(`adjust must be one of: ${ADJUST_MODES.join(", ")}`, 400);
+  const adjust = adjustRaw as AdjustMode;
 
   // duration accepts ms (if "duration_ms" or large) — treat plain "duration" as ms.
   const durationMs =
@@ -49,6 +56,7 @@ export async function GET(req: Request) {
     season: seasonRaw != null ? Number(seasonRaw) : null,
     episode: episodeRaw != null ? Number(episodeRaw) : null,
     durationMs,
+    adjust,
     types: typeRaw ? [typeRaw as never] : undefined,
   });
 

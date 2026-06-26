@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { segments } from "@/db/schema";
 import { and, eq, isNull, desc } from "drizzle-orm";
 import { adjustForDuration, matchRank } from "./duration";
-import type { DurationAdjustment } from "./duration";
+import type { DurationAdjustment, AdjustMode } from "./duration";
 import { publicTimes } from "./time";
 import { getResolved } from "./resolved";
 import { computeConfidence, countAgreement } from "./confidence";
@@ -15,6 +15,7 @@ export interface SegmentQuery {
   season: number | null;
   episode: number | null;
   durationMs: number | null;
+  adjust?: AdjustMode;
   types?: SegmentTypeName[];
 }
 
@@ -122,7 +123,7 @@ export async function getBestByType(q: SegmentQuery): Promise<BestByType> {
   for (const type of want) {
     const group = rows
       .filter((r) => r.segmentType === type)
-      .map((row) => ({ row, adj: adjustForDuration(row, q.durationMs) }));
+      .map((row) => ({ row, adj: adjustForDuration(row, q.durationMs, q.adjust) }));
     if (group.length === 0) continue; // no data at all -> stays null
 
     const inRange = group.filter((g) => g.adj.kind !== "out-of-range");
