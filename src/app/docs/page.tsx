@@ -52,8 +52,8 @@ export default function DocsPage() {
         req/min). Writing requires a logged-in session or an API key (
         {config.limits.writePerMinute} req/min). All timestamps are returned in
         both <span className="mono">_ms</span> and{" "}
-        <span className="mono">_sec</span>. Data is licensed CC BY-NC-SA 4.0
-        unless you have explicit permission.
+        <span className="mono">_sec</span>. Data is licensed ODbL 1.0 unless
+        you have explicit permission.
       </p>
 
       <div className="mt-8 space-y-4">
@@ -127,7 +127,7 @@ export default function DocsPage() {
             <span className="mono">X-API-Key</span> (or a session cookie). Times
             accept <span className="mono">*_ms</span> (numbers) or{" "}
             <span className="mono">*_sec</span> (seconds or clock strings).
-            Submitting implies agreement to publish under CC BY-NC-SA 4.0 (see{" "}
+            Submitting implies agreement to publish under ODbL 1.0 (see{" "}
             <a href="/terms" className="text-skip hover:underline">
               terms
             </a>
@@ -173,8 +173,7 @@ export default function DocsPage() {
         <Endpoint method="GET" path="/api/dump">
           <p>
             The full open data dump of every approved segment — no user data.
-            Licensed CC BY-NC-SA 4.0. This is the guarantee that the data stays
-            free.
+            Licensed ODbL 1.0. This is the guarantee that the data stays free.
           </p>
         </Endpoint>
 

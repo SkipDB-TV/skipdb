@@ -29,4 +29,4 @@ export function preflight() {
 }
 
 export const LICENSE_NOTICE =
-  "Data licensed CC BY-NC-SA 4.0 unless you have explicit permission.";
+  "Data licensed ODbL 1.0 unless you have explicit permission. https://opendatacommons.org/licenses/odbl/1-0/";

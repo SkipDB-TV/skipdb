@@ -41,7 +41,7 @@ jobs:
 
             Import into a fresh instance: `pnpm db:import <url>`, then `pnpm db:resolve`.
 
-            Licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+            Licensed [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/).
           files: |
             skipdb-dump.json
           make_latest: false

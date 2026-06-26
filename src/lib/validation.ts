@@ -33,7 +33,7 @@ export const submitSchema = z
     duration_ms: z.number().optional(),
     duration_sec: flexibleTime.optional(),
 
-    // Submitting implies agreement to publish under CC BY-NC-SA 4.0 (see /terms);
+    // Submitting implies agreement to publish under ODbL 1.0 (see /terms);
     // accepted for backwards-compatibility but no longer required.
     agree_terms: z.boolean().optional(),
   })

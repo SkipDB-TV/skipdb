@@ -573,7 +573,7 @@ function SegmentForm({
           <p className="text-xs text-slate-500">
             By submitting you agree it&apos;s published under{" "}
             <a href="/license" target="_blank" className="text-skip hover:underline">
-              CC BY-NC-SA 4.0
+              ODbL 1.0
             </a>{" "}
             (
             <a href="/terms" target="_blank" className="text-skip hover:underline">

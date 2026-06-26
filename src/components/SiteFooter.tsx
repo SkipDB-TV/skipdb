@@ -48,8 +48,8 @@ export function SiteFooter() {
       <div className="container-page mt-8 flex flex-col gap-1 text-xs text-slate-500">
         <p>
           Code: <span className="text-slate-300">AGPL-3.0</span> · Data:{" "}
-          <span className="text-slate-300">CC BY-NC-SA 4.0</span> unless you
-          have explicit permission.
+          <span className="text-slate-300">ODbL 1.0</span> unless you have
+          explicit permission.
         </p>
       </div>
     </footer>

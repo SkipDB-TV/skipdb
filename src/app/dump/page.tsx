@@ -4,7 +4,7 @@ import { API_URL, BASE_URL } from "@/lib/urls";
 export const metadata: Metadata = {
   title: "Open data",
   description:
-    "Download all SkipDB skip timestamps as open data (CC BY-NC-SA 4.0), or self-host a read-only mirror or a full fork.",
+    "Download all SkipDB skip timestamps as open data (ODbL 1.0), or self-host a read-only mirror or a full fork.",
 };
 
 const DUMP_URL = process.env.NEXT_PUBLIC_DUMP_URL;
@@ -39,12 +39,12 @@ export default function DumpPage() {
       <p className="mt-2 max-w-2xl text-slate-400">
         Every segment in SkipDB is published as open data under{" "}
         <a
-          href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+          href="https://opendatacommons.org/licenses/odbl/1-0/"
           className="text-skip hover:underline"
           target="_blank"
           rel="noreferrer"
         >
-          CC BY-NC-SA 4.0
+          ODbL 1.0
         </a>
         . The data contains no user information — only timestamps, titles, and
         community vote counts.
@@ -84,7 +84,7 @@ export default function DumpPage() {
             it&apos;s available even if this site goes down.
           </p>
           <CodeBlock>{`{
-  "license": "CC BY-NC-SA 4.0",
+  "license": "ODbL 1.0",
   "generated_at": "2026-01-01T03:00:00.000Z",
   "count": 12345,
   "segments": [
@@ -115,10 +115,19 @@ export default function DumpPage() {
             >
               AGPL-3.0
             </a>{" "}
-            and the data is CC BY-NC-SA 4.0. Both licenses guarantee that
-            neither can be quietly made proprietary. The daily dump to GitHub
-            Releases means a permanent, independently-hosted copy of the data
-            exists outside of any single server.
+            and the data is{" "}
+            <a
+              href="https://opendatacommons.org/licenses/odbl/1-0/"
+              className="text-skip hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              ODbL 1.0
+            </a>
+            . Both licenses guarantee that neither can be quietly made
+            proprietary. The daily dump to GitHub Releases means a permanent,
+            independently-hosted copy of the data exists outside of any single
+            server.
           </p>
           <p>
             If this instance ever disappears, anyone can download the last dump

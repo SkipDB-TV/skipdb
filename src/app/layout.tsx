@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: "%s · SkipDB",
   },
   description:
-    "Crowdsourced intro, recap, outro and preview timestamps for movies and TV. Open code (AGPL-3.0) and open data (CC BY-NC-SA 4.0).",
+    "Crowdsourced intro, recap, outro and preview timestamps for movies and TV. Open code (AGPL-3.0) and open data (ODbL 1.0).",
   openGraph: {
     siteName: "SkipDB",
     type: "website",
