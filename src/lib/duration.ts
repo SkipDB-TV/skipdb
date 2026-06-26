@@ -5,11 +5,12 @@ export type MatchKind = "exact" | "shifted" | "agnostic" | "out-of-range";
 /**
  * How to apply a duration offset when the stream length doesn't exactly match:
  *
- * - conservative (default): shift start by the offset, but only shift end if it
- *   makes the segment shorter (i.e. end_ms decreases). Watching a bit more intro
- *   is fine; accidentally skipping real content is not.
- * - greedy: shift both start and end by the full offset (original behaviour).
- * - none: return the original timestamps unchanged (still excludes out-of-range).
+ * - conservative (default): only shift start and end earlier (offset < 0). Never
+ *   shifts timestamps later — the skip button appears at the earliest possible
+ *   point, so the user may have a few extra seconds to wait rather than missing
+ *   the window entirely.
+ * - greedy: shift both start and end by the full offset in either direction.
+ * - none: return the original timestamps unchanged (still marks out-of-range).
  */
 export type AdjustMode = "conservative" | "greedy" | "none";
 
@@ -77,19 +78,14 @@ export function adjustForDuration(
       };
     }
 
-    const shiftedStart = segment.startMs + offset;
-    // conservative: only shift end when doing so makes it smaller (segment gets shorter).
-    // greedy: shift end by the full offset unconditionally.
-    const shiftedEnd =
-      mode === "greedy" || offset < 0
-        ? segment.endMs + offset
-        : segment.endMs;
-
+    // greedy: shift both in either direction.
+    // conservative: only shift earlier (offset < 0) — never push the button later.
+    const apply = mode === "greedy" || offset < 0;
     return {
-      startMs: shiftedStart,
-      endMs: shiftedEnd,
+      startMs: apply ? segment.startMs + offset : segment.startMs,
+      endMs:   apply ? segment.endMs   + offset : segment.endMs,
       offsetMs: offset,
-      adjusted: true,
+      adjusted: apply,
       kind: "shifted",
     };
   }

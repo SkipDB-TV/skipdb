@@ -61,11 +61,7 @@ export function formatPublic(
 }
 
 export type PublicSegment = ReturnType<typeof formatPublic>;
-/** Returned when we have data but every version's duration is too far off. */
-export interface ExcludedSegment {
-  excluded: "duration_mismatch";
-}
-export type SegmentResult = PublicSegment | ExcludedSegment | null;
+export type SegmentResult = PublicSegment | null;
 export type BestByType = Record<SegmentTypeName, SegmentResult>;
 
 const emptyByType = (): BestByType => ({
@@ -127,25 +123,24 @@ export async function getBestByType(q: SegmentQuery): Promise<BestByType> {
     if (group.length === 0) continue; // no data at all -> stays null
 
     const inRange = group.filter((g) => g.adj.kind !== "out-of-range");
-    if (inRange.length === 0) {
-      // We have data, but every version's duration is too far off to match.
-      result[type] = { excluded: "duration_mismatch" };
-      continue;
-    }
+    // Prefer in-range candidates; fall back to best out-of-range rather than
+    // returning nothing. The client can check match: "out-of-range" as the flag.
+    const candidates = inRange.length > 0 ? inRange : group;
 
-    inRange.sort((a, b) => {
-      // Prefer better match kind (exact < shifted), then community score.
+    candidates.sort((a, b) => {
+      // Prefer better match kind (exact < shifted < agnostic < out-of-range),
+      // then community score.
       const r = matchRank(a.adj.kind) - matchRank(b.adj.kind);
       if (r !== 0) return r;
       return b.row.score - a.row.score;
     });
-    const winner = inRange[0];
+    const winner = candidates[0];
     // 0,0 is the "no segment" sentinel — confirmed absence, so return null.
     if (winner.row.startMs === 0 && winner.row.endMs === 0) continue;
     const confidence = computeConfidence({
       agreeCount: countAgreement(
         winner.row,
-        inRange.map((g) => g.row),
+        candidates.map((g) => g.row),
       ),
       votesUp: winner.row.votesUp,
       votesDown: winner.row.votesDown,
