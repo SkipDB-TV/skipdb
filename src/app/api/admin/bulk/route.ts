@@ -1,10 +1,8 @@
-import { db } from "@/db";
-import { segments, moderationLog } from "@/db/schema";
 import { json, apiError } from "@/lib/api";
 import { requireStaff } from "@/lib/admin";
 import { ensureTitle } from "@/lib/titles";
 import { recomputeResolved } from "@/lib/resolved";
-import { validateSegmentBounds } from "@/lib/validation";
+import { insertStaffSegment } from "@/lib/staff-submit";
 import { config } from "@/lib/config";
 import { z } from "zod";
 import type { SegmentTypeName } from "@/lib/config";
@@ -64,20 +62,8 @@ export async function POST(req: Request) {
   }> = [];
 
   for (const ep of episodes) {
-    const boundsError = validateSegmentBounds({
-      startMs: ep.start_ms,
-      endMs: ep.end_ms,
-      durationMs: ep.duration_ms ?? null,
-      segmentType: segmentType as SegmentTypeName,
-    });
-    if (boundsError) {
-      results.push({ season: ep.season, episode: ep.episode, error: boundsError });
-      continue;
-    }
-
-    const [created] = await db
-      .insert(segments)
-      .values({
+    try {
+      const created = await insertStaffSegment({
         titleId: title.id,
         imdbId,
         season: ep.season,
@@ -86,26 +72,12 @@ export async function POST(req: Request) {
         startMs: ep.start_ms,
         endMs: ep.end_ms,
         durationMs: ep.duration_ms ?? null,
-        submittedBy: staff.id,
-        status: "approved",
-        autoApproved: true,
-        source: "web",
-      })
-      .returning();
-
-    await db.insert(moderationLog).values({
-      segmentId: created.id,
-      moderatorId: staff.id,
-      action: "auto-approve",
-      reason: "bulk submission by staff",
-    });
-
-    results.push({
-      season: ep.season,
-      episode: ep.episode,
-      id: created.id,
-      status: "approved",
-    });
+        submittedById: staff.id,
+      });
+      results.push({ season: ep.season, episode: ep.episode, id: created.id, status: "approved" });
+    } catch (err) {
+      results.push({ season: ep.season, episode: ep.episode, error: String(err) });
+    }
   }
 
   // Recompute resolved for all successfully inserted episodes in parallel.
