@@ -4,9 +4,27 @@ import { useState, useEffect } from "react";
 import { API_URL } from "@/lib/urls";
 
 const EXAMPLES = [
-  { label: "Breaking Bad S1E1", imdbId: "tt0903747", season: 1, episode: 1, duration: 2820 },
-  { label: "Suits S1E1", imdbId: "tt1632701", season: 1, episode: 1, duration: 2520 },
-  { label: "The Office S2E1", imdbId: "tt0386676", season: 2, episode: 1, duration: 1320 },
+  {
+    label: "Breaking Bad S1E1",
+    imdbId: "tt0903747",
+    season: 1,
+    episode: 1,
+    duration: 3500,
+  },
+  {
+    label: "Suits S1E2",
+    imdbId: "tt1632701",
+    season: 1,
+    episode: 2,
+    duration: 2583,
+  },
+  {
+    label: "The Office S2E1",
+    imdbId: "tt0386676",
+    season: 2,
+    episode: 1,
+    duration: 1268,
+  },
 ];
 
 export function ApiDemo() {
@@ -61,17 +79,13 @@ export function ApiDemo() {
         ))}
       </div>
       <div className="p-4">
-        <p className="mono truncate text-[10px] text-slate-500">{url}</p>
+        <p className="mono whitespace-wrap text-[10px] text-slate-500">{url}</p>
         <pre className="mono mt-3 h-72 overflow-y-auto text-[11px] leading-relaxed">
-          {loading && (
-            <span className="text-slate-500">fetching…</span>
-          )}
+          {loading && <span className="text-slate-500">fetching…</span>}
           {error && (
             <span className="text-rose-400">{`// Could not reach ${API_URL}`}</span>
           )}
-          {result && (
-            <JsonHighlight json={result} />
-          )}
+          {result && <JsonHighlight json={result} />}
         </pre>
       </div>
     </div>
@@ -85,16 +99,41 @@ function JsonHighlight({ json }: { json: string }) {
   return (
     <>
       {parts.map((part, i) => {
-        if (i % 2 === 0) return <span key={i} className="text-slate-500">{part}</span>;
+        if (i % 2 === 0)
+          return (
+            <span key={i} className="text-slate-500">
+              {part}
+            </span>
+          );
         if (/^".*":$/.test(part))
-          return <span key={i} className="text-slate-300">{part}</span>;
+          return (
+            <span key={i} className="text-slate-300">
+              {part}
+            </span>
+          );
         if (/^"/.test(part))
-          return <span key={i} className="text-skip-bright">{part}</span>;
+          return (
+            <span key={i} className="text-skip-bright">
+              {part}
+            </span>
+          );
         if (part === "null")
-          return <span key={i} className="text-slate-500">{part}</span>;
+          return (
+            <span key={i} className="text-slate-500">
+              {part}
+            </span>
+          );
         if (part === "true" || part === "false")
-          return <span key={i} className="text-signal">{part}</span>;
-        return <span key={i} className="text-warn">{part}</span>;
+          return (
+            <span key={i} className="text-signal">
+              {part}
+            </span>
+          );
+        return (
+          <span key={i} className="text-warn">
+            {part}
+          </span>
+        );
       })}
     </>
   );

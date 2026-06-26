@@ -109,7 +109,7 @@ export default function DocsPage() {
     "intro": {
       "start_ms": 61000, "end_ms": 91000,
       "start_sec": 61,   "end_sec": 91,
-      "match": "exact", "adjusted": false, "offset_ms": 0,
+      "match": "exact", "adjusted": false, "offset_sec": 0,
       "confidence": 0.93
     },
     "recap":   null,
