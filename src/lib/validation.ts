@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { config } from "./config";
+import type { SegmentTypeName } from "./config";
 import { parseTimeToMs, roundTime } from "./time";
 
 export const imdbIdSchema = z
@@ -38,7 +39,7 @@ export const submitSchema = z
   })
   .transform((data, ctx) => {
     const startMs = data.start_ms ?? parseTimeToMs(data.start_sec);
-    const endMs = data.end_ms ?? parseTimeToMs(data.end_sec);
+    const submittedEndMs = data.end_ms ?? parseTimeToMs(data.end_sec);
     const durationMs =
       data.duration_ms ?? parseTimeToMs(data.duration_sec ?? null);
 
@@ -49,13 +50,37 @@ export const submitSchema = z
         path: ["start_ms"],
       });
     }
-    if (endMs == null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "end_ms or end_sec is required",
-        path: ["end_ms"],
-      });
+
+    // Outros: end is optional — if omitted the credits run to the end of the
+    // stream. If an explicit end IS provided (post-credits scene present), use
+    // it. Either way, snap to durationMs when within the threshold.
+    let endMs: number | null;
+    if (data.segment_type === "outro") {
+      endMs = submittedEndMs ?? durationMs;
+      if (endMs == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "outro submissions without an end time require duration_ms so we know where the stream ends",
+          path: ["end_ms"],
+        });
+      } else if (
+        durationMs != null &&
+        Math.abs(endMs - durationMs) <= config.limits.outroEndThresholdMs
+      ) {
+        endMs = durationMs;
+      }
+    } else {
+      endMs = submittedEndMs;
+      if (endMs == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "end_ms or end_sec is required",
+          path: ["end_ms"],
+        });
+      }
     }
+
     if (startMs == null || endMs == null) return z.NEVER;
 
     return {
@@ -77,15 +102,20 @@ export function validateSegmentBounds(input: {
   startMs: number;
   endMs: number;
   durationMs: number | null;
+  segmentType: SegmentTypeName;
 }): string | null {
-  const { startMs, endMs, durationMs } = input;
+  const { startMs, endMs, durationMs, segmentType } = input;
   if (startMs < 0) return "start must be >= 0";
   if (endMs <= startMs) return "end must be after start";
   const len = endMs - startMs;
-  if (len < config.limits.minSegmentMs)
-    return `segment too short (min ${config.limits.minSegmentMs} ms)`;
-  if (len > config.limits.maxSegmentMs)
-    return `segment too long (max ${config.limits.maxSegmentMs} ms)`;
+  const minMs = config.limits.minSegmentMs;
+  if (len < minMs) return `segment too short (min ${minMs / 1000}s)`;
+  const maxMs =
+    config.limits.maxByType[segmentType] ?? config.limits.maxSegmentMs;
+  if (len > maxMs) {
+    const maxMin = maxMs / 60_000;
+    return `${segmentType} too long (max ${maxMin} min)`;
+  }
   if (durationMs != null && endMs > durationMs)
     return "end is beyond the provided stream duration";
   return null;

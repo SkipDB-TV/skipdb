@@ -96,7 +96,12 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
-  const boundsError = validateSegmentBounds(input);
+  const boundsError = validateSegmentBounds({
+    startMs: input.startMs,
+    endMs: input.endMs,
+    durationMs: input.durationMs,
+    segmentType: input.segmentType,
+  });
   if (boundsError) return apiError(boundsError, 422);
 
   // Resolve / create the title (also infers media type from IMDb lookup).

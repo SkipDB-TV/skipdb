@@ -115,6 +115,48 @@ async function MovieBody({
   );
 }
 
+function CoverageSummary({
+  episodes,
+}: {
+  episodes: Awaited<ReturnType<typeof getTitleOverview>>["episodes"];
+}) {
+  const total = episodes.filter((e) => e.season != null).length;
+  if (total === 0) return null;
+
+  return (
+    <div className="card p-5">
+      <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        Coverage across {total} episodes
+      </h3>
+      <div className="space-y-3">
+        {SEGMENT_ORDER.map((type) => {
+          const covered = episodes.filter(
+            (e) => e.season != null && (e.coverage[type]?.approved ?? 0) > 0,
+          ).length;
+          const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
+          const meta = SEGMENT_META[type];
+          return (
+            <div key={type}>
+              <div className="mb-1.5 flex items-center justify-between text-sm">
+                <span className="text-slate-300">{meta.label}</span>
+                <span className="mono text-xs text-slate-400">
+                  {covered}/{total} ({pct}%)
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className={`h-full rounded-full ${meta.ring}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SeriesBody({
   overview,
   imdbId,
@@ -135,6 +177,7 @@ function SeriesBody({
 
   return (
     <div className="space-y-10">
+      <CoverageSummary episodes={overview.episodes} />
       {seasons.map((season) => {
         const eps = overview.episodes.filter((e) => e.season === season);
         if (eps.length === 0) return null;

@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   },
   description:
     "Crowdsourced intro, recap, outro and preview timestamps for movies and TV. Open code (AGPL-3.0) and open data (CC BY-NC-SA 4.0).",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/skipdb_256.png", type: "image/png", sizes: "256x256" },
+    ],
+  },
 };
 
 export default function RootLayout({

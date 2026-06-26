@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { json, apiError, preflight } from "@/lib/api";
 import { getActor } from "@/lib/actor";
 import { editSchema, validateSegmentBounds } from "@/lib/validation";
+import { config } from "@/lib/config";
 import { parseTimeToMs, roundTime } from "@/lib/time";
 import { reviewSubmission } from "@/lib/review";
 import { recomputeResolved } from "@/lib/resolved";
@@ -72,9 +73,6 @@ export async function PATCH(
   const startMs = roundTime(
     e.start_ms ?? parseTimeToMs(e.start_sec) ?? segment.startMs,
   );
-  const endMs = roundTime(
-    e.end_ms ?? parseTimeToMs(e.end_sec) ?? segment.endMs,
-  );
   const durationMs = e.clear_duration
     ? null
     : e.duration_ms != null || e.duration_sec != null
@@ -82,8 +80,19 @@ export async function PATCH(
           (e.duration_ms ?? parseTimeToMs(e.duration_sec)) as number,
         )
       : segment.durationMs;
+  let endMs = roundTime(
+    e.end_ms ?? parseTimeToMs(e.end_sec) ?? segment.endMs,
+  );
+  // Snap outro end to duration when within the threshold.
+  if (
+    type === "outro" &&
+    durationMs != null &&
+    Math.abs(endMs - durationMs) <= config.limits.outroEndThresholdMs
+  ) {
+    endMs = durationMs;
+  }
 
-  const boundsError = validateSegmentBounds({ startMs, endMs, durationMs });
+  const boundsError = validateSegmentBounds({ startMs, endMs, durationMs, segmentType: type });
   if (boundsError) return apiError(boundsError, 422);
 
   const decision = await reviewSubmission(
