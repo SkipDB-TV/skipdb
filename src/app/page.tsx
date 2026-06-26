@@ -92,8 +92,8 @@ export default async function HomePage() {
             body: "Code is AGPL-3.0, data is CC BY-NC-SA 4.0. A public dump means SkipDB can never be made proprietary or shut down with the data held hostage.",
           },
           {
-            title: "Millisecond precision",
-            body: "Every timestamp is stored in milliseconds and returned in both milliseconds and seconds — accurate enough for frame-perfect skip clients.",
+            title: "Voted, not just submitted",
+            body: "Timestamps are scored by community votes and cross-checked against the show's established pattern before going live. Outliers go to manual review — so clients get reliable data, not just whatever was submitted first.",
           },
           {
             title: "Stream-aware matching",
