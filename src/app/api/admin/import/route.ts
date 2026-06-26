@@ -146,6 +146,7 @@ export async function POST(req: Request) {
 
   type SegResult =
     | { type: string; id: number; start_ms: number; end_ms: number; duration_ms: number | null; status: "approved" }
+    | { type: string; skipped: true; existing_id: number; reason: string }
     | { type: string; error: string };
 
   const results: Array<{
@@ -208,7 +209,7 @@ export async function POST(req: Request) {
       }
 
       try {
-        const created = await insertStaffSegment({
+        const outcome = await insertStaffSegment({
           titleId: title.id,
           imdbId: item.imdb_id,
           season,
@@ -220,23 +221,32 @@ export async function POST(req: Request) {
           submittedById: staff.id,
         });
 
-        segResults.push({
-          type: segType,
-          id: created.id,
-          start_ms: created.startMs,
-          end_ms: created.endMs,
-          duration_ms: created.durationMs,
-          status: "approved",
-        });
+        if (outcome.kind === "skipped") {
+          segResults.push({
+            type: segType,
+            skipped: true,
+            existing_id: outcome.existingId,
+            reason: "Identical approved segment already exists — vote on it instead",
+          });
+        } else {
+          segResults.push({
+            type: segType,
+            id: outcome.id,
+            start_ms: outcome.startMs,
+            end_ms: outcome.endMs,
+            duration_ms: outcome.durationMs,
+            status: "approved",
+          });
 
-        const resolveKey = `${item.imdb_id}|${season}|${episode}|${segType}`;
-        toResolve.set(resolveKey, {
-          imdbId: item.imdb_id,
-          titleId: title.id,
-          season,
-          episode,
-          segmentType: segType,
-        });
+          const resolveKey = `${item.imdb_id}|${season}|${episode}|${segType}`;
+          toResolve.set(resolveKey, {
+            imdbId: item.imdb_id,
+            titleId: title.id,
+            season,
+            episode,
+            segmentType: segType,
+          });
+        }
       } catch (err) {
         segResults.push({ type: segType, error: String(err) });
       }
@@ -254,7 +264,8 @@ export async function POST(req: Request) {
   await Promise.all([...toResolve.values()].map((k) => recomputeResolved(k)));
 
   const submitted = results.flatMap((r) => r.segments).filter((s) => "id" in s).length;
+  const skipped = results.flatMap((r) => r.segments).filter((s) => "skipped" in s).length;
   const failed = results.flatMap((r) => r.segments).filter((s) => "error" in s).length;
 
-  return json({ submitted, failed, results });
+  return json({ submitted, skipped, failed, results });
 }

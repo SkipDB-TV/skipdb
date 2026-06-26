@@ -4,6 +4,7 @@
  */
 import { db } from "@/db";
 import { segments, moderationLog } from "@/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
 import { validateSegmentBounds } from "./validation";
 import type { SegmentTypeName } from "./config";
 
@@ -19,21 +20,19 @@ export interface StaffSegmentInput {
   submittedById: string;
 }
 
-export interface StaffSegmentResult {
-  id: number;
-  startMs: number;
-  endMs: number;
-  durationMs: number | null;
-  status: "approved";
-}
+export type StaffSegmentOutcome =
+  | { kind: "created"; id: number; startMs: number; endMs: number; durationMs: number | null; status: "approved" }
+  | { kind: "skipped"; reason: "exact_match"; existingId: number };
 
 /**
  * Validate and insert a single segment as staff-approved.
- * Returns the created row on success or throws a string error message.
+ * Returns a 'skipped' outcome when an identical approved segment already exists
+ * (caller should tell the user to vote instead).
+ * Throws a string error message on validation or DB failure.
  */
 export async function insertStaffSegment(
   input: StaffSegmentInput,
-): Promise<StaffSegmentResult> {
+): Promise<StaffSegmentOutcome> {
   const boundsError = validateSegmentBounds({
     startMs: input.startMs,
     endMs: input.endMs,
@@ -41,6 +40,27 @@ export async function insertStaffSegment(
     segmentType: input.segmentType,
   });
   if (boundsError) throw boundsError;
+
+  // If an identical approved segment already exists, skip — caller should vote.
+  const [exactMatch] = await db
+    .select({ id: segments.id })
+    .from(segments)
+    .where(
+      and(
+        eq(segments.imdbId, input.imdbId),
+        input.season != null ? eq(segments.season, input.season) : isNull(segments.season),
+        input.episode != null ? eq(segments.episode, input.episode) : isNull(segments.episode),
+        eq(segments.segmentType, input.segmentType),
+        eq(segments.startMs, input.startMs),
+        eq(segments.endMs, input.endMs),
+        eq(segments.status, "approved"),
+      ),
+    )
+    .limit(1);
+
+  if (exactMatch) {
+    return { kind: "skipped", reason: "exact_match", existingId: exactMatch.id };
+  }
 
   const [created] = await db
     .insert(segments)
@@ -68,6 +88,7 @@ export async function insertStaffSegment(
   });
 
   return {
+    kind: "created",
     id: created.id,
     startMs: created.startMs,
     endMs: created.endMs,

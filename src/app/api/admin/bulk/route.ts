@@ -58,12 +58,14 @@ export async function POST(req: Request) {
     episode: number;
     id?: number;
     status?: string;
+    skipped?: true;
+    existing_id?: number;
     error?: string;
   }> = [];
 
   for (const ep of episodes) {
     try {
-      const created = await insertStaffSegment({
+      const outcome = await insertStaffSegment({
         titleId: title.id,
         imdbId,
         season: ep.season,
@@ -74,7 +76,11 @@ export async function POST(req: Request) {
         durationMs: ep.duration_ms ?? null,
         submittedById: staff.id,
       });
-      results.push({ season: ep.season, episode: ep.episode, id: created.id, status: "approved" });
+      if (outcome.kind === "skipped") {
+        results.push({ season: ep.season, episode: ep.episode, skipped: true, existing_id: outcome.existingId, status: "exact_match" });
+      } else {
+        results.push({ season: ep.season, episode: ep.episode, id: outcome.id, status: "approved" });
+      }
     } catch (err) {
       results.push({ season: ep.season, episode: ep.episode, error: String(err) });
     }
@@ -95,8 +101,9 @@ export async function POST(req: Request) {
       ),
   );
 
-  const ok = results.filter((r) => !r.error).length;
-  const failed = results.filter((r) => r.error).length;
+  const ok = results.filter((r) => r.id != null).length;
+  const skipped = results.filter((r) => r.skipped).length;
+  const failed = results.filter((r) => r.error != null).length;
 
-  return json({ submitted: ok, failed, results });
+  return json({ submitted: ok, skipped, failed, results });
 }
