@@ -16,7 +16,8 @@ export default function LicensePage() {
           <p className="mt-2 text-sm text-slate-400">
             The application source code is licensed under the GNU Affero General
             Public License v3.0. Anyone who runs a modified version as a network
-            service must make their source available — closing the SaaS loophole.
+            service must make their source available — closing the SaaS
+            loophole.
           </p>
         </div>
         <div className="card p-6">
@@ -42,16 +43,17 @@ export default function LicensePage() {
       </div>
 
       <div className="card mt-6 p-6">
-        <h2 className="text-lg font-semibold text-white">
-          Why two licenses?
-        </h2>
+        <h2 className="text-lg font-semibold text-white">Why two licenses?</h2>
         <p className="mt-2 text-sm text-slate-400">
           Code and data are different things. AGPL keeps the software open even
           when run as a hosted service. CC BY-NC-SA keeps the community-built
           dataset free for non-commercial use and prevents anyone — including
           future maintainers — from relicensing it as a proprietary product. The
-          public <a href="/api/dump" className="text-skip hover:underline">data
-          dump</a> makes that guarantee concrete.
+          public{" "}
+          <a href="/api/dump" className="text-skip hover:underline">
+            data dump
+          </a>{" "}
+          makes that guarantee concrete.
         </p>
       </div>
     </div>

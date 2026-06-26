@@ -58,8 +58,14 @@ export async function GET(req: Request) {
 
   const t0 = performance.now();
   const [segmentsByType, introLengthEstimateMs] = await Promise.all([
-    getBestByType({ imdbId, season, episode, durationMs, adjust, types }),
-    getIntroLengthEstimate(imdbId, season),
+    getBestByType({ imdbId, season, episode, durationMs, adjust, types }).then((r) => {
+      console.log(`[segments/best]     ${Math.round(performance.now() - t0)}ms`);
+      return r;
+    }),
+    getIntroLengthEstimate(imdbId, season).then((r) => {
+      console.log(`[segments/estimate] ${Math.round(performance.now() - t0)}ms`);
+      return r;
+    }),
   ]);
   const t1 = performance.now();
   console.log(

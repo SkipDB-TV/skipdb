@@ -147,9 +147,9 @@ export default async function HomePage() {
             <Link href="/docs" className="btn-primary">
               Read the API docs
             </Link>
-            <a href="/api/dump" className="btn-ghost">
+            <Link prefetch={false} href="/api/dump" className="btn-ghost">
               Download the data
-            </a>
+            </Link>
           </div>
         </div>
         <pre className="card overflow-x-auto p-5 text-xs leading-relaxed text-slate-300">

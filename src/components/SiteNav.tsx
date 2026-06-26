@@ -18,7 +18,7 @@ export async function SiteNav() {
           <Link href="/docs" className="hover:text-white">
             API
           </Link>
-          <Link href="/api/dump" className="hover:text-white">
+          <Link prefetch={false} href="/api/dump" className="hover:text-white">
             Data dump
           </Link>
           {isStaff && (
