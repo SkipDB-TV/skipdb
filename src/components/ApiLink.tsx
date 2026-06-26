@@ -1,3 +1,5 @@
+import { API_URL } from "@/lib/urls";
+
 /**
  * A quick link to the JSON API response for a movie/episode, so contributors and
  * developers can eyeball exactly what the API returns.
@@ -16,7 +18,7 @@ export function ApiLink({
   const params = new URLSearchParams({ imdb_id: imdbId });
   if (season != null) params.set("season", String(season));
   if (episode != null) params.set("episode", String(episode));
-  const href = `https://api.skipdb.tv/api/segments?${params.toString()}`;
+  const href = `${API_URL}/api/segments?${params.toString()}`;
 
   if (variant === "inline") {
     return (

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { API_URL } from "@/lib/urls";
 
 const EXAMPLES = [
-  { label: "Breaking Bad S1E1", imdbId: "tt0903747", season: 1, episode: 1 },
-  { label: "Suits S1E1", imdbId: "tt1632701", season: 1, episode: 1 },
-  { label: "The Office S2E1", imdbId: "tt0386676", season: 2, episode: 1 },
+  { label: "Breaking Bad S1E1", imdbId: "tt0903747", season: 1, episode: 1, duration: 2820 },
+  { label: "Suits S1E1", imdbId: "tt1632701", season: 1, episode: 1, duration: 2520 },
+  { label: "The Office S2E1", imdbId: "tt0386676", season: 2, episode: 1, duration: 1320 },
 ];
 
 export function ApiDemo() {
@@ -21,8 +22,9 @@ export function ApiDemo() {
       imdb_id: example.imdbId,
       season: String(example.season),
       episode: String(example.episode),
+      duration: String(example.duration),
     });
-    const url = `https://api.skipdb.tv/api/segments?${params}`;
+    const url = `${API_URL}/api/segments?${params}`;
     setLoading(true);
     setResult(null);
     setError(false);
@@ -37,8 +39,9 @@ export function ApiDemo() {
     imdb_id: example.imdbId,
     season: String(example.season),
     episode: String(example.episode),
+    duration: String(example.duration),
   });
-  const url = `https://api.skipdb.tv/api/segments?${params}`;
+  const url = `${API_URL}/api/segments?${params}`;
 
   return (
     <div className="card overflow-hidden">
@@ -64,7 +67,7 @@ export function ApiDemo() {
             <span className="text-slate-500">fetching…</span>
           )}
           {error && (
-            <span className="text-rose-400">// Could not reach api.skipdb.tv</span>
+            <span className="text-rose-400">{`// Could not reach ${API_URL}`}</span>
           )}
           {result && (
             <JsonHighlight json={result} />

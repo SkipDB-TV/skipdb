@@ -30,8 +30,7 @@ export async function GET(req: Request) {
 
   const seasonRaw = url.searchParams.get("season");
   const episodeRaw = url.searchParams.get("episode");
-  const durationRaw =
-    url.searchParams.get("duration") ?? url.searchParams.get("duration_ms");
+  const durationRaw = url.searchParams.get("duration");
   const typeRaw = url.searchParams.get("type") ?? undefined;
   const adjustRaw = url.searchParams.get("adjust") ?? "conservative";
 
@@ -46,11 +45,12 @@ export async function GET(req: Request) {
     return apiError(`adjust must be one of: ${ADJUST_MODES.join(", ")}`, 400);
   const adjust = adjustRaw as AdjustMode;
 
-  // duration accepts ms (if "duration_ms" or large) — treat plain "duration" as ms.
-  const durationMs =
-    durationRaw != null ? Math.round(Number(durationRaw)) : null;
-  if (durationRaw != null && (durationMs == null || Number.isNaN(durationMs)))
-    return apiError("duration must be a number in milliseconds", 400);
+  let durationMs: number | null = null;
+  if (durationRaw != null) {
+    const v = Math.round(Number(durationRaw));
+    if (Number.isNaN(v)) return apiError("duration must be a number in seconds", 400);
+    durationMs = v * 1000;
+  }
 
   const season = seasonRaw != null ? Number(seasonRaw) : null;
   const episode = episodeRaw != null ? Number(episodeRaw) : null;
@@ -77,9 +77,6 @@ export async function GET(req: Request) {
       imdb_id: imdbId,
       season,
       episode,
-      requested_duration_ms: durationMs,
-      // Best result per type. Each value is the segment, null (no data),
-      // or { excluded: "duration_mismatch" }.
       segments: segmentsByType,
       // Median intro length (end_ms - start_ms) derived from the season (or
       // series fallback). null when fewer than 2 samples exist or lengths are

@@ -3,9 +3,10 @@ import "./globals.css";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NavigationProgress } from "@/components/NavigationProgress";
+import { BASE_URL } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://skipdb.tv"),
+  metadataBase: new URL(BASE_URL),
   title: {
     default: "SkipDB — open, crowdsourced skip timestamps",
     template: "%s · SkipDB",

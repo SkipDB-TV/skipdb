@@ -1,4 +1,5 @@
 import { config } from "@/lib/config";
+import { API_URL } from "@/lib/urls";
 
 export const metadata = {
   title: "API docs",
@@ -46,7 +47,7 @@ export default function DocsPage() {
       <h1 className="text-3xl font-bold text-white">API documentation</h1>
       <p className="mt-2 max-w-2xl text-slate-400">
         Base URL:{" "}
-        <code className="mono text-slate-300">https://api.skipdb.tv</code>.
+        <code className="mono text-slate-300">{API_URL}</code>.
         Reading is open and rate-limited ({config.limits.readPerMinute}{" "}
         req/min). Writing requires a logged-in session or an API key (
         {config.limits.writePerMinute} req/min). All timestamps are returned in
@@ -64,27 +65,46 @@ export default function DocsPage() {
             <span className="mono">episode</span>,{" "}
             <span className="mono">type</span> (
             {config.segmentTypes.join(" | ")}), and{" "}
-            <span className="mono">duration</span> (stream length in ms).
+            <span className="mono">duration</span> (stream length in{" "}
+            <strong className="text-white">seconds</strong> — pass this for the
+            best results).
           </p>
           <p className="mt-2">
             When <span className="mono">duration</span> is supplied, SkipDB
             returns the best-matching version and shifts timestamps for streams
             that differ by up to {config.duration.shiftToleranceMs / 1000}s —
-            assuming an extra/missing logo or scene at the start.
+            assuming an extra/missing logo or scene at the start. Passing
+            seconds (not ms) also maximises CDN cache hit rates since encoding
+            variations won&apos;t produce different URLs.
           </p>
           <p className="mt-2">
-            The response gives the single best result per type as top-level keys.
-            Each value is the segment, <span className="mono">null</span> (no data
-            yet), or <span className="mono">{`{ "excluded": "duration_mismatch" }`}</span>{" "}
-            (we have data, but only for streams too different in length to match
-            yours). <span className="mono">confidence</span> is 0–1, based on how
-            many submissions agree plus community votes.
+            Each segment value is either the best result or{" "}
+            <span className="mono">null</span> (no data yet).{" "}
+            <span className="mono">confidence</span> is 0–1 based on how many
+            submissions agree plus community votes. The{" "}
+            <span className="mono">match</span> field indicates how well the
+            result fits the requested duration:{" "}
+            <span className="mono">exact</span>,{" "}
+            <span className="mono">shifted</span> (timestamps adjusted for a
+            stream with a slightly different intro/logo),{" "}
+            <span className="mono">agnostic</span> (no duration was submitted so
+            no comparison was possible), or{" "}
+            <span className="mono">out-of-range</span> (the best available data
+            is from a stream whose length differs too much to shift reliably —
+            treat this as an uncertain match and reflect that in your UI).
           </p>
-          <Code>{`curl "https://api.skipdb.tv/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=2820000"
+          <p className="mt-2">
+            <span className="mono">intro_length_estimate_ms</span> is the median
+            intro length for the season (when 80% of episodes agree within 15
+            s). When no intro segment exists for an episode, use this to offer a
+            &ldquo;skip ~Xs&rdquo; button that advances playback by that amount
+            (minus a few seconds to give the user time to click the button after
+            the intro starts) rather than jumping to a specific timestamp.
+          </p>
+          <Code>{`curl "${API_URL}/api/segments?imdb_id=tt0903747&season=1&episode=1&duration=2820"
 
 {
   "imdb_id": "tt0903747", "season": 1, "episode": 1,
-  "requested_duration_ms": 2820000,
   "segments": {
     "intro": {
       "start_ms": 61000, "end_ms": 91000,
@@ -93,9 +113,10 @@ export default function DocsPage() {
       "confidence": 0.93
     },
     "recap":   null,
-    "outro":   { "start_ms": 2760000, "end_ms": 2820000, ... },
-    "preview": { "excluded": "duration_mismatch" }
-  }
+    "outro":   { "start_ms": 2760000, "end_ms": 2820000, "match": "shifted", ... },
+    "preview": { "start_ms": 2700000, "end_ms": 2760000, "match": "out-of-range", ... }
+  },
+  "intro_length_estimate_ms": 30000
 }`}</Code>
         </Endpoint>
 
@@ -112,7 +133,7 @@ export default function DocsPage() {
             </a>
             ).
           </p>
-          <Code>{`curl -X POST https://api.skipdb.tv/api/segments \\
+          <Code>{`curl -X POST ${API_URL}/api/segments \\
   -H "Authorization: Bearer skdb_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -129,8 +150,8 @@ export default function DocsPage() {
 
         <Endpoint method="POST" path="/api/segments/{id}/vote">
           <p>
-            Vote a segment <span className="mono">{`{ "value": 1 }`}</span> (good)
-            or <span className="mono">-1</span> (bad), or{" "}
+            Vote a segment <span className="mono">{`{ "value": 1 }`}</span>{" "}
+            (good) or <span className="mono">-1</span> (bad), or{" "}
             <span className="mono">0</span> to clear. Requires auth.
           </p>
         </Endpoint>
