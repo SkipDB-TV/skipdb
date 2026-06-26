@@ -154,7 +154,7 @@ export default async function HomePage() {
         </div>
         <pre className="card overflow-x-auto p-5 text-xs leading-relaxed text-slate-300">
           <code className="mono">{`# Best segments for an episode on a 47:00 stream
-curl "https://skipdb/api/segments?\\
+curl "https://skipdb.tv/api/segments?\\
   imdb_id=tt0903747&season=1&episode=1&duration=2820000"
 
 {
