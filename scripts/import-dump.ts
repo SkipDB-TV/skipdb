@@ -14,7 +14,7 @@
 import "dotenv/config";
 import { readFileSync } from "fs";
 import { db } from "../src/db";
-import { titles, segments } from "../src/db/schema";
+import { titles, segments, users } from "../src/db/schema";
 
 interface DumpSegment {
   imdb_id: string;
@@ -24,6 +24,7 @@ interface DumpSegment {
   episode: number | null;
   segment_type: "intro" | "recap" | "outro" | "preview";
   status: "pending" | "approved" | "rejected";
+  submitted_by: string | null;
   start_ms: number;
   end_ms: number;
   duration_ms: number | null;
@@ -60,6 +61,25 @@ for (const s of dump.segments) {
   }
 }
 
+// Create ghost users for each unique submitted_by so the FK is satisfied.
+// Ghost users have no email or password — they can't log in — but segments
+// remain attributable, and deleting a ghost user cascades to null out their
+// submitted_by on all their segments (useful for bulk-removing a bad actor).
+const ghostIds = new Set(
+  dump.segments.map((s) => s.submitted_by).filter((id): id is string => !!id),
+);
+if (ghostIds.size > 0) {
+  console.log(`Upserting ${ghostIds.size} ghost users…`);
+  const GHOST_BATCH = 500;
+  const ghostArr = [...ghostIds];
+  for (let i = 0; i < ghostArr.length; i += GHOST_BATCH) {
+    await db
+      .insert(users)
+      .values(ghostArr.slice(i, i + GHOST_BATCH).map((id) => ({ id })))
+      .onConflictDoNothing();
+  }
+}
+
 console.log(`Upserting ${byImdb.size} titles…`);
 const titleIdByImdb = new Map<string, number>();
 for (const [imdbId, meta] of byImdb) {
@@ -87,6 +107,7 @@ for (let i = 0; i < dump.segments.length; i += BATCH) {
         episode: s.episode,
         segmentType: s.segment_type,
         status: s.status,
+        submittedBy: s.submitted_by ?? null,
         startMs: s.start_ms,
         endMs: s.end_ms,
         durationMs: s.duration_ms,

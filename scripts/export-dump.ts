@@ -1,6 +1,7 @@
 /**
  * Generates skipdb-dump.json in the repo root — all segments (all statuses)
- * with vote counts. No user data is included.
+ * with vote counts. Submitter user IDs are included for moderation continuity
+ * (bulk delete by user) but no PII (names, emails) is exported.
  *
  * Run: pnpm db:export
  * Requires DATABASE_URL in env (or .env file).
@@ -23,6 +24,7 @@ const rows = await db
     episode: segments.episode,
     segment_type: segments.segmentType,
     status: segments.status,
+    submitted_by: segments.submittedBy,
     start_ms: segments.startMs,
     end_ms: segments.endMs,
     duration_ms: segments.durationMs,
@@ -47,7 +49,7 @@ writeFileSync(
     license_url: "https://opendatacommons.org/licenses/odbl/1-0/",
     generated_at: new Date().toISOString(),
     count: data.length,
-    note: "Contains no user data. By using this data you agree to ODbL 1.0 unless you have explicit permission.",
+    note: "Contains no PII. submitted_by is an opaque user ID for moderation continuity only. By using this data you agree to ODbL 1.0 unless you have explicit permission.",
     segments: data,
   }),
 );

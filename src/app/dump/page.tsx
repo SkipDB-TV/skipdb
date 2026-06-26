@@ -77,7 +77,8 @@ export default function DumpPage() {
           <p>
             A single JSON file with every segment at every status (approved,
             pending, rejected), plus vote counts and the title name and media
-            type. No accounts, no emails, no IP addresses — just timestamps.
+            type. No accounts, no emails, no IP addresses — timestamps plus an
+            opaque submitter ID for moderation continuity.
           </p>
           <p>
             The dump is regenerated daily and published to GitHub Releases, so
@@ -95,6 +96,7 @@ export default function DumpPage() {
       "season": 1, "episode": 1,
       "segment_type": "intro",
       "status": "approved",
+      "submitted_by": "usr_abc123",
       "start_ms": 61000, "end_ms": 91000,
       "start_sec": 61,   "end_sec": 91,
       "votes_up": 12, "votes_down": 0, "score": 12

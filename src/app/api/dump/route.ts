@@ -13,8 +13,8 @@ export function OPTIONS() {
 
 /**
  * Public data dump of all APPROVED segments — SponsorBlock-style open data.
- * Contains NO user data: only the crowdsourced timestamps and the media they
- * belong to. Licensed ODbL 1.0.
+ * Contains no PII: submitted_by is an opaque user ID for moderation continuity.
+ * Licensed ODbL 1.0.
  *
  * Current implementation streams the full dataset as JSON. A scheduled,
  * downloadable mirror (and CSV variant) is on the roadmap; the schema is built
@@ -46,6 +46,7 @@ export async function GET(req: Request) {
       start_ms: segments.startMs,
       end_ms: segments.endMs,
       duration_ms: segments.durationMs,
+      submitted_by: segments.submittedBy,
       votes_up: segments.votesUp,
       votes_down: segments.votesDown,
       score: segments.score,
@@ -68,7 +69,7 @@ export async function GET(req: Request) {
       attribution: "SkipDB — https://github.com/SkipDB-TV/skipdb (open data)",
       generated_at: new Date().toISOString(),
       count: data.length,
-      note: "Contains no user data. By using this data you agree to ODbL 1.0 unless you have explicit permission.",
+      note: "Contains no PII. submitted_by is an opaque user ID for moderation continuity only. By using this data you agree to ODbL 1.0 unless you have explicit permission.",
       segments: data,
     },
     {
