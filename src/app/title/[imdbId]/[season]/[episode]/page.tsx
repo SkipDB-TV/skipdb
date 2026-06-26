@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { episodes as episodesTable } from "@/db/schema";
+import { titles, episodes as episodesTable } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { ensureTitle, ensureSeasonEpisodes } from "@/lib/titles";
 import { loadPanelSegments } from "@/lib/panel";
@@ -9,8 +9,58 @@ import { auth } from "@/lib/auth";
 import { SegmentPanel } from "@/components/SegmentPanel";
 import { Timeline } from "@/components/Timeline";
 import { ApiLink } from "@/components/ApiLink";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ imdbId: string; season: string; episode: string }>;
+}): Promise<Metadata> {
+  const { imdbId, season: seasonRaw, episode: episodeRaw } = await params;
+  const id = imdbId.toLowerCase();
+  const season = Number(seasonRaw);
+  const episode = Number(episodeRaw);
+  if (!/^tt\d{6,10}$/.test(id) || !Number.isInteger(season) || !Number.isInteger(episode)) return {};
+
+  const [title] = await db.select().from(titles).where(eq(titles.imdbId, id)).limit(1);
+  if (!title) return {};
+
+  const ep = await db
+    .select()
+    .from(episodesTable)
+    .where(
+      and(
+        eq(episodesTable.titleId, title.id),
+        eq(episodesTable.season, season),
+        eq(episodesTable.episode, episode),
+      ),
+    )
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  const epCode = `S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}`;
+  const epName = ep?.name ?? `Episode ${episode}`;
+  const label = `${title.name} ${epCode} — ${epName}`;
+  const description = ep?.overview
+    ? `${ep.overview.slice(0, 150).trimEnd()}… — skip timestamps on SkipDB.`
+    : `Community skip timestamps for ${title.name} ${epCode} on SkipDB.`;
+
+  return {
+    title: label,
+    description,
+    openGraph: {
+      title: label,
+      description,
+      images: title.posterUrl ? [{ url: title.posterUrl }] : [],
+    },
+    twitter: {
+      card: title.posterUrl ? "summary_large_image" : "summary",
+      images: title.posterUrl ? [title.posterUrl] : [],
+    },
+  };
+}
 
 export default async function EpisodePage({
   params,

@@ -5,12 +5,22 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { NavigationProgress } from "@/components/NavigationProgress";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://skipdb.tv"),
   title: {
     default: "SkipDB — open, crowdsourced skip timestamps",
     template: "%s · SkipDB",
   },
   description:
     "Crowdsourced intro, recap, outro and preview timestamps for movies and TV. Open code (AGPL-3.0) and open data (CC BY-NC-SA 4.0).",
+  openGraph: {
+    siteName: "SkipDB",
+    type: "website",
+    images: [{ url: "/skipdb_512.png", width: 512, height: 512, alt: "SkipDB" }],
+  },
+  twitter: {
+    card: "summary",
+    images: ["/skipdb_512.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", type: "image/x-icon" },

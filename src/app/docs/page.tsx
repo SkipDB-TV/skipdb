@@ -1,6 +1,10 @@
 import { config } from "@/lib/config";
 
-export const metadata = { title: "API docs" };
+export const metadata = {
+  title: "API docs",
+  description:
+    "Documentation for the SkipDB open API — fetch crowd-sourced intro, recap, outro and preview timestamps for any title by IMDb ID.",
+};
 
 function Endpoint({
   method,

@@ -8,8 +8,41 @@ import { Timeline } from "@/components/Timeline";
 import { ApiLink } from "@/components/ApiLink";
 import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
 import type { SegmentTypeName } from "@/lib/config";
+import type { Metadata } from "next";
+import { db } from "@/db";
+import { titles } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ imdbId: string }>;
+}): Promise<Metadata> {
+  const { imdbId } = await params;
+  const id = imdbId.toLowerCase();
+  if (!/^tt\d{6,10}$/.test(id)) return {};
+  const [title] = await db.select().from(titles).where(eq(titles.imdbId, id));
+  if (!title) return {};
+  const label = title.year ? `${title.name} (${title.year})` : title.name;
+  const description = title.overview
+    ? `${title.overview.slice(0, 150).trimEnd()}… — community skip timestamps on SkipDB.`
+    : `Community-sourced intro, recap, outro and preview timestamps for ${label} on SkipDB.`;
+  return {
+    title: label,
+    description,
+    openGraph: {
+      title: label,
+      description,
+      images: title.posterUrl ? [{ url: title.posterUrl }] : [],
+    },
+    twitter: {
+      card: title.posterUrl ? "summary_large_image" : "summary",
+      images: title.posterUrl ? [title.posterUrl] : [],
+    },
+  };
+}
 
 export default async function TitlePage({
   params,
