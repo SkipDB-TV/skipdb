@@ -37,6 +37,14 @@ export function SiteFooter() {
             <Link href="/search" className="block hover:text-white">
               Browse titles
             </Link>
+            <a
+              href="https://github.com/SkipDB-TV/skipdb"
+              target="_blank"
+              rel="noreferrer"
+              className="block hover:text-white"
+            >
+              GitHub
+            </a>
           </div>
           <div className="space-y-1.5">
             <p className="text-xs uppercase tracking-wide text-slate-500">
