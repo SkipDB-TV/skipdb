@@ -121,11 +121,10 @@ export async function reviewSubmission(
   }
 
   // 3. Pattern fit across the whole show for this segment type.
-  const otherEpisodeLengths = approved
-    .filter(
-      (s) => s.season !== candidate.season || s.episode !== candidate.episode,
-    )
-    .map((s) => s.endMs - s.startMs);
+  const otherEpisodes = approved.filter(
+    (s) => s.season !== candidate.season || s.episode !== candidate.episode,
+  );
+  const otherEpisodeLengths = otherEpisodes.map((s) => s.endMs - s.startMs);
 
   if (otherEpisodeLengths.length >= config.review.minPatternSamples) {
     const median = medianOf(otherEpisodeLengths);

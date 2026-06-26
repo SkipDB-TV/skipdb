@@ -3,6 +3,7 @@ import { segments, moderationLog } from "@/db/schema";
 import { json, apiError, preflight, LICENSE_NOTICE } from "@/lib/api";
 import { getBestByType } from "@/lib/segments";
 import type { AdjustMode } from "@/lib/duration";
+import { getIntroLengthEstimate } from "@/lib/estimate";
 import { recomputeResolved } from "@/lib/resolved";
 import { submitSchema, validateSegmentBounds } from "@/lib/validation";
 import { getActor } from "@/lib/actor";
@@ -51,24 +52,29 @@ export async function GET(req: Request) {
   if (durationRaw != null && (durationMs == null || Number.isNaN(durationMs)))
     return apiError("duration must be a number in milliseconds", 400);
 
-  const segmentsByType = await getBestByType({
-    imdbId,
-    season: seasonRaw != null ? Number(seasonRaw) : null,
-    episode: episodeRaw != null ? Number(episodeRaw) : null,
-    durationMs,
-    adjust,
-    types: typeRaw ? [typeRaw as never] : undefined,
-  });
+  const season = seasonRaw != null ? Number(seasonRaw) : null;
+  const episode = episodeRaw != null ? Number(episodeRaw) : null;
+  const types = typeRaw ? ([typeRaw] as (typeof config.segmentTypes)[number][]) : [...config.segmentTypes];
+
+  const [segmentsByType, introLengthEstimateMs] = await Promise.all([
+    getBestByType({ imdbId, season, episode, durationMs, adjust, types }),
+    getIntroLengthEstimate(imdbId, season),
+  ]);
 
   return json(
     {
       imdb_id: imdbId,
-      season: seasonRaw != null ? Number(seasonRaw) : null,
-      episode: episodeRaw != null ? Number(episodeRaw) : null,
+      season,
+      episode,
       requested_duration_ms: durationMs,
-      // Best result per type as top-level keys. Each value is the segment,
-      // null (no data), or { excluded: "duration_mismatch" }.
+      // Best result per type. Each value is the segment, null (no data),
+      // or { excluded: "duration_mismatch" }.
       segments: segmentsByType,
+      // Median intro length (end_ms - start_ms) derived from the season (or
+      // series fallback). null when fewer than 2 samples exist or lengths are
+      // inconsistent (< 80% within 15s of the median). Use as a fallback to
+      // offer a manual "skip intro" button of roughly the right duration.
+      intro_length_estimate_ms: introLengthEstimateMs,
     },
     { headers: rateLimitHeaders(rl) },
   );
