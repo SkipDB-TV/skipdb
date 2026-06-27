@@ -5,6 +5,7 @@ import { json, apiError } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import { profileSchema } from "@/lib/validation";
 import { usesSocialLogin } from "@/lib/account";
+import { hasMxRecord } from "@/lib/email-validation";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,10 @@ export async function POST(req: Request) {
     await db.select().from(users).where(eq(users.id, userId))
   )[0];
   const emailChanged = current?.email?.toLowerCase() !== email;
+
+  if (emailChanged && !(await hasMxRecord(email))) {
+    return apiError("That email address doesn't appear to be valid. Please check it and try again.", 422);
+  }
 
   await db
     .update(users)
