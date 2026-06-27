@@ -31,6 +31,9 @@ export async function SiteNav() {
           <Link href="/data" className="hover:text-white">
             Data
           </Link>
+          <Link href="/about" className="hover:text-white">
+            About
+          </Link>
           {isStaff && (
             <Link href="/admin" className="text-skip hover:text-skip-bright">
               Review
