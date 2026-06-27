@@ -30,8 +30,8 @@ async function getHomeStats() {
 }
 
 function fmt(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M+`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k+`;
   return String(n);
 }
 
@@ -72,10 +72,9 @@ export default async function HomePage() {
       </section>
 
       {/* Stats */}
-      <section className="mt-14 grid grid-cols-3 divide-x divide-white/5 rounded-2xl border border-white/5 bg-white/3">
+      <section className="mt-14 grid grid-cols-2 divide-x divide-white/5 rounded-2xl border border-white/5 bg-white/3">
         {[
           { value: fmt(stats.segments), label: "approved segments" },
-          { value: fmt(stats.titles), label: "titles" },
           { value: fmt(stats.episodes), label: "episodes covered" },
         ].map((s) => (
           <div key={s.label} className="py-6 text-center">
