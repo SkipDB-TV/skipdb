@@ -38,9 +38,9 @@ export const config = {
     maxSegmentMs: 15 * 60_000, // 15 minutes (overall cap)
     /** Per-type maximum lengths. */
     maxByType: {
-      intro: 3 * 60_000,    // 3 minutes
-      recap: 5 * 60_000,    // 5 minutes
-      outro: 15 * 60_000,   // 15 minutes
+      intro: 5 * 60_000, // 5 minutes
+      recap: 5 * 60_000, // 5 minutes
+      outro: 15 * 60_000, // 15 minutes
       preview: 15 * 60_000, // 15 minutes
     } as Record<string, number>,
     /**
