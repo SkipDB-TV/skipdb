@@ -3,6 +3,7 @@ import "./globals.css";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NavigationProgress } from "@/components/NavigationProgress";
+import { Analytics } from "@vercel/analytics/next";
 import { BASE_URL } from "@/lib/urls";
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({
         <SiteNav />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <Analytics />
       </body>
     </html>
   );
