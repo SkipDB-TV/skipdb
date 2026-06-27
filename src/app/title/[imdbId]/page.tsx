@@ -7,7 +7,7 @@ import { SegmentPanel } from "@/components/SegmentPanel";
 import { Timeline } from "@/components/Timeline";
 import { ApiLink } from "@/components/ApiLink";
 import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
-import type { SegmentTypeName } from "@/lib/config";
+import { SeasonTabs } from "@/components/SeasonTabs";
 import type { Metadata } from "next";
 import { db } from "@/db";
 import { titles } from "@/db/schema";
@@ -212,91 +212,13 @@ function SeriesBody({
         ].sort((a, b) => a - b);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <CoverageSummary episodes={overview.episodes} />
-      {seasons.map((season) => {
-        const eps = overview.episodes.filter((e) => e.season === season);
-        if (eps.length === 0) return null;
-        return (
-          <section key={season}>
-            <h2 className="mb-3 text-lg font-semibold text-white">
-              Season {season}
-            </h2>
-            <div className="grid gap-2">
-              {eps.map((ep) => (
-                <div
-                  key={`${ep.season}-${ep.episode}`}
-                  className="card flex items-center justify-between gap-4 p-4 transition hover:shadow-glow"
-                >
-                  <Link
-                    href={`/title/${imdbId}/${ep.season}/${ep.episode}`}
-                    className="flex min-w-0 flex-1 items-center gap-3"
-                    prefetch={false}
-                  >
-                    <span className="mono shrink-0 text-sm text-slate-500">
-                      S{String(ep.season).padStart(2, "0")}E
-                      {String(ep.episode).padStart(2, "0")}
-                    </span>
-                    <span className="truncate text-sm text-white">
-                      {ep.name ?? "Episode"}
-                    </span>
-                  </Link>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <div className="flex gap-1.5">
-                      {SEGMENT_ORDER.map((t) => (
-                        <CoverageDot
-                          key={t}
-                          type={t}
-                          cov={ep.coverage[t]}
-                          hasAbsence={t === "intro" && ep.hasIntroAbsence}
-                        />
-                      ))}
-                    </div>
-                    <ApiLink
-                      imdbId={imdbId}
-                      season={ep.season}
-                      episode={ep.episode}
-                      variant="inline"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      <SeasonTabs
+        imdbId={imdbId}
+        seasons={seasons}
+        episodes={overview.episodes}
+      />
     </div>
-  );
-}
-
-function CoverageDot({
-  type,
-  cov,
-  hasAbsence = false,
-}: {
-  type: SegmentTypeName;
-  cov?: { approved: number; pending: number };
-  hasAbsence?: boolean;
-}) {
-  const meta = SEGMENT_META[type];
-  if (hasAbsence) {
-    return (
-      <span
-        title={`${meta.label}: confirmed no segment`}
-        className="flex h-2.5 w-2.5 items-center justify-center text-[9px] leading-none text-slate-500"
-      >
-        –
-      </span>
-    );
-  }
-  const has = cov && cov.approved > 0;
-  const pending = cov && cov.pending > 0 && !has;
-  return (
-    <span
-      title={`${meta.label}: ${cov?.approved ?? 0} approved, ${cov?.pending ?? 0} pending`}
-      className={`h-2.5 w-2.5 rounded-full ${
-        has ? meta.ring : pending ? "bg-warn/60" : "bg-white/10"
-      }`}
-    />
   );
 }
