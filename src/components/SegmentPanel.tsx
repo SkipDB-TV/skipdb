@@ -7,6 +7,7 @@ import { SEGMENT_META, SEGMENT_ORDER } from "@/lib/segment-types";
 import { Tooltip } from "./Tooltip";
 import type { SegmentTypeName } from "@/lib/config";
 import { READ_ONLY } from "@/lib/read-only";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 export interface PanelSegment {
   id: number;
@@ -139,9 +140,12 @@ export function SegmentPanel({
                               No {s.segmentType}
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
-                              Community marked: this episode has no {s.segmentType}
+                              Community marked: this episode has no{" "}
+                              {s.segmentType}
                               {s.status === "pending" && (
-                                <span className="ml-2 text-warn">· pending</span>
+                                <span className="ml-2 text-warn">
+                                  · pending
+                                </span>
                               )}
                               {s.mine && (
                                 <span className="ml-2 text-signal-bright">
@@ -150,28 +154,30 @@ export function SegmentPanel({
                               )}
                             </p>
                           </div>
-                          {!READ_ONLY && <div className="flex shrink-0 items-center gap-1">
-                            {s.mine && (
-                              <button
-                                onClick={() => remove(s.id)}
-                                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-rose-300 transition hover:bg-danger/10"
-                              >
-                                Delete
-                              </button>
-                            )}
-                            <VoteButton
-                              dir="up"
-                              active={s.yourVote === 1}
-                              count={s.votesUp}
-                              onClick={() => vote(s.id, 1)}
-                            />
-                            <VoteButton
-                              dir="down"
-                              active={s.yourVote === -1}
-                              count={s.votesDown}
-                              onClick={() => vote(s.id, -1)}
-                            />
-                          </div>}
+                          {!READ_ONLY && (
+                            <div className="flex shrink-0 items-center gap-1">
+                              {s.mine && (
+                                <button
+                                  onClick={() => remove(s.id)}
+                                  className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-rose-300 transition hover:bg-danger/10"
+                                >
+                                  Delete
+                                </button>
+                              )}
+                              <VoteButton
+                                dir="up"
+                                active={s.yourVote === 1}
+                                count={s.votesUp}
+                                onClick={() => vote(s.id, 1)}
+                              />
+                              <VoteButton
+                                dir="down"
+                                active={s.yourVote === -1}
+                                count={s.votesDown}
+                                onClick={() => vote(s.id, -1)}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     }
@@ -239,43 +245,47 @@ export function SegmentPanel({
                             {new Date(s.updatedAt).getTime() -
                               new Date(s.createdAt).getTime() >
                               1000 && (
-                              <span title={new Date(s.updatedAt).toLocaleString()}>
+                              <span
+                                title={new Date(s.updatedAt).toLocaleString()}
+                              >
                                 {" "}
                                 · edited {formatDate(s.updatedAt)}
                               </span>
                             )}
                           </p>
                         </div>
-                        {!READ_ONLY && <div className="flex shrink-0 items-center gap-1">
-                          {s.mine && (
-                            <>
-                              <button
-                                onClick={() => setEditingId(s.id)}
-                                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => remove(s.id)}
-                                className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-rose-300 transition hover:bg-danger/10"
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                          <VoteButton
-                            dir="up"
-                            active={s.yourVote === 1}
-                            count={s.votesUp}
-                            onClick={() => vote(s.id, 1)}
-                          />
-                          <VoteButton
-                            dir="down"
-                            active={s.yourVote === -1}
-                            count={s.votesDown}
-                            onClick={() => vote(s.id, -1)}
-                          />
-                        </div>}
+                        {!READ_ONLY && (
+                          <div className="flex shrink-0 items-center gap-1">
+                            {s.mine && (
+                              <>
+                                <button
+                                  onClick={() => setEditingId(s.id)}
+                                  className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => remove(s.id)}
+                                  className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-rose-300 transition hover:bg-danger/10"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                            <VoteButton
+                              dir="up"
+                              active={s.yourVote === 1}
+                              count={s.votesUp}
+                              onClick={() => vote(s.id, 1)}
+                            />
+                            <VoteButton
+                              dir="down"
+                              active={s.yourVote === -1}
+                              count={s.votesDown}
+                              onClick={() => vote(s.id, -1)}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -287,39 +297,41 @@ export function SegmentPanel({
       )}
 
       {/* New submission */}
-      {!READ_ONLY && <div className="card p-6">
-        <h3 className="text-lg font-semibold text-white">
-          Contribute a segment
-        </h3>
-        <p className="mb-4 mt-1 text-sm text-slate-400">
-          Times accept seconds (<span className="mono">91</span>) or clock format
-          (<span className="mono">1:31</span>).
-        </p>
-        <SegmentForm
-          mode="create"
-          initialType="intro"
-          initialStart=""
-          initialEnd=""
-          initialDuration=""
-          defaultDurationMs={defaultDurationMs}
-          isAuthed={isAuthed}
-          onSubmit={async (payload) => {
-            const res = await fetch("/api/segments", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                imdb_id: imdbId,
-                season: season ?? undefined,
-                episode: episode ?? undefined,
-                ...payload,
-              }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (res.ok) router.refresh();
-            return { ok: res.ok, data };
-          }}
-        />
-      </div>}
+      {!READ_ONLY && (
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-white">
+            Contribute a segment
+          </h3>
+          <p className="mb-4 mt-1 text-sm text-slate-400">
+            Times accept seconds (<span className="mono">91</span>) or clock
+            format (<span className="mono">1:31</span>).
+          </p>
+          <SegmentForm
+            mode="create"
+            initialType="intro"
+            initialStart=""
+            initialEnd=""
+            initialDuration=""
+            defaultDurationMs={defaultDurationMs}
+            isAuthed={isAuthed}
+            onSubmit={async (payload) => {
+              const res = await fetch("/api/segments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  imdb_id: imdbId,
+                  season: season ?? undefined,
+                  episode: episode ?? undefined,
+                  ...payload,
+                }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok) router.refresh();
+              return { ok: res.ok, data };
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -352,6 +364,34 @@ function VoteButton({
       <span aria-hidden>{good ? "▲" : "▼"}</span>
       {count}
     </button>
+  );
+}
+
+/** Shows computed segment length once both start and end are valid. */
+function SegmentLengthHint({
+  start,
+  end,
+  duration,
+}: {
+  start: string;
+  end: string;
+  duration: string;
+}) {
+  const startMs = parseTimeToMs(start.trim());
+  const endMs = parseTimeToMs(end.trim());
+  if (startMs == null || endMs == null || endMs <= startMs) return null;
+  const durMs = endMs - startMs;
+  return (
+    <p className="text-xs text-slate-500">
+      Segment length:{" "}
+      <span className="mono text-slate-300">{msToSec(durMs)}s</span>
+      <span className="mono text-slate-600"> ({msToClock(durMs)})</span>
+      {duration.trim() === "" && (
+        <span className="ml-3 text-warn/70">
+          · Adding a stream duration helps match your times to other encodes
+        </span>
+      )}
+    </p>
   );
 }
 
@@ -391,9 +431,10 @@ function SegmentForm({
   initialDuration: string;
   defaultDurationMs: number | null;
   isAuthed: boolean;
-  onSubmit: (
-    payload: FormPayload,
-  ) => Promise<{ ok: boolean; data: { message?: string; error?: string; issues?: string[] } }>;
+  onSubmit: (payload: FormPayload) => Promise<{
+    ok: boolean;
+    data: { message?: string; error?: string; issues?: string[] };
+  }>;
   onCancel?: () => void;
 }) {
   const [type, setType] = useState<SegmentTypeName>(initialType);
@@ -402,6 +443,7 @@ function SegmentForm({
   const [duration, setDuration] = useState(initialDuration);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [confirmAbsence, setConfirmAbsence] = useState(false);
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -417,7 +459,8 @@ function SegmentForm({
         start_sec: start,
         end_sec: end,
       };
-      if (mode === "edit" && duration.trim() === "") payload.clear_duration = true;
+      if (mode === "edit" && duration.trim() === "")
+        payload.clear_duration = true;
       else if (duration.trim() !== "") payload.duration_sec = duration;
 
       const { ok, data } = await onSubmit(payload);
@@ -435,6 +478,25 @@ function SegmentForm({
           setEnd("");
           setDuration("");
         }
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitAbsence() {
+    setConfirmAbsence(false);
+    setBusy(true);
+    try {
+      const { ok, data } = await onSubmit({
+        segment_type: type,
+        start_sec: "0",
+        end_sec: "0",
+      });
+      if (!ok) {
+        setMsg({ ok: false, text: data.error ?? "Something went wrong" });
+      } else {
+        setMsg({ ok: true, text: `Marked as no ${type}.` });
       }
     } finally {
       setBusy(false);
@@ -477,7 +539,7 @@ function SegmentForm({
             className="input mono"
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            placeholder="1:01"
+            placeholder="1:01 or 61"
             required
           />
         </label>
@@ -489,7 +551,7 @@ function SegmentForm({
             className="input mono"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
-            placeholder="1:31"
+            placeholder="1:31 or 91"
             required
           />
         </label>
@@ -505,11 +567,15 @@ function SegmentForm({
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder={
-              defaultDurationMs ? `e.g. ${msToClock(defaultDurationMs)}` : "47:00"
+              defaultDurationMs
+                ? `e.g. ${msToClock(defaultDurationMs)}`
+                : "47:00 or 2820"
             }
           />
         </label>
       </div>
+
+      <SegmentLengthHint start={start} end={end} duration={duration} />
 
       {msg && (
         <p
@@ -541,29 +607,12 @@ function SegmentForm({
             type="button"
             disabled={busy}
             className="btn-ghost text-sm text-slate-500"
-            onClick={async () => {
+            onClick={() => {
               if (!isAuthed) {
                 window.location.href = "/auth/signin";
                 return;
               }
-              setBusy(true);
-              try {
-                const { ok, data } = await onSubmit({
-                  segment_type: type,
-                  start_sec: "0",
-                  end_sec: "0",
-                });
-                if (!ok) {
-                  setMsg({
-                    ok: false,
-                    text: data.error ?? "Something went wrong",
-                  });
-                } else {
-                  setMsg({ ok: true, text: `Marked as no ${type}.` });
-                }
-              } finally {
-                setBusy(false);
-              }
+              setConfirmAbsence(true);
             }}
           >
             No {type}
@@ -572,17 +621,33 @@ function SegmentForm({
         {mode === "create" && (
           <p className="text-xs text-slate-500">
             By submitting you agree it&apos;s published under{" "}
-            <a href="/license" target="_blank" className="text-skip hover:underline">
+            <a
+              href="/license"
+              target="_blank"
+              className="text-skip hover:underline"
+            >
               ODbL 1.0 + reciprocity
             </a>{" "}
             (
-            <a href="/terms" target="_blank" className="text-skip hover:underline">
+            <a
+              href="/terms"
+              target="_blank"
+              className="text-skip hover:underline"
+            >
               terms
             </a>
             ).
           </p>
         )}
       </div>
+
+      {confirmAbsence && (
+        <ConfirmDialog
+          message={`Mark this episode as having no ${type}? This tells other users there is nothing to skip here.`}
+          onConfirm={submitAbsence}
+          onCancel={() => setConfirmAbsence(false)}
+        />
+      )}
     </form>
   );
 }
