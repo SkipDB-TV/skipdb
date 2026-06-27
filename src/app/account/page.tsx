@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { segments } from "@/db/schema";
+import { segments, titles } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { activeKeyInfo } from "@/lib/api-key";
 import { usesSocialLogin } from "@/lib/account";
@@ -10,6 +10,7 @@ import { ApiKeyManager } from "@/components/ApiKeyManager";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { SegmentChip } from "@/components/SegmentChip";
 import { msToClock } from "@/lib/time";
+import { SEGMENT_META, SEGMENT_ORDER } from "@/lib/segment-types";
 import type { SegmentTypeName } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
@@ -21,9 +22,45 @@ export default async function AccountPage() {
 
   const keyInfo = await activeKeyInfo(user.id);
   const social = await usesSocialLogin(user.id);
-  const mine = await db
-    .select()
+
+  // Full history for stats (lightweight columns only)
+  const all = await db
+    .select({
+      status: segments.status,
+      segmentType: segments.segmentType,
+      votesUp: segments.votesUp,
+    })
     .from(segments)
+    .where(eq(segments.submittedBy, user.id));
+
+  const total = all.length;
+  const approved = all.filter((s) => s.status === "approved").length;
+  const pending = all.filter((s) => s.status === "pending").length;
+  const rejected = all.filter((s) => s.status === "rejected").length;
+  const totalVotes = all.reduce((n, s) => n + s.votesUp, 0);
+
+  const byType = Object.fromEntries(
+    SEGMENT_ORDER.map((t) => [
+      t,
+      all.filter((s) => s.segmentType === t).length,
+    ]),
+  ) as Record<SegmentTypeName, number>;
+
+  // Recent 50 for the submissions list
+  const mine = await db
+    .select({
+      id: segments.id,
+      imdbId: segments.imdbId,
+      season: segments.season,
+      episode: segments.episode,
+      segmentType: segments.segmentType,
+      startMs: segments.startMs,
+      endMs: segments.endMs,
+      status: segments.status,
+      titleName: titles.name,
+    })
+    .from(segments)
+    .leftJoin(titles, eq(titles.imdbId, segments.imdbId))
     .where(eq(segments.submittedBy, user.id))
     .orderBy(desc(segments.createdAt))
     .limit(50);
@@ -38,8 +75,7 @@ export default async function AccountPage() {
           <p className="mt-1 text-sm text-slate-400">
             {user.email} ·{" "}
             <span className="capitalize text-slate-300">{user.role}</span> ·
-            reputation{" "}
-            <span className="text-skip">{user.reputation}</span>
+            reputation <span className="text-skip">{user.reputation}</span>
           </p>
         </div>
       </div>
@@ -84,6 +120,51 @@ export default async function AccountPage() {
       <h2 className="mt-12 text-xl font-semibold text-white">
         Your submissions
       </h2>
+
+      {total > 0 && (
+        <div className="mt-4 card p-5 space-y-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {(
+              [
+                { label: "Total", value: total, cls: "text-white" },
+                { label: "Approved", value: approved, cls: "text-ok" },
+                { label: "Pending", value: pending, cls: "text-amber-300" },
+                {
+                  label: "Upvotes received",
+                  value: totalVotes,
+                  cls: "text-skip",
+                },
+              ] as const
+            ).map(({ label, value, cls }) => (
+              <div key={label}>
+                <p className="text-xs text-slate-500">{label}</p>
+                <p className={`mt-1 text-2xl font-bold tabular-nums ${cls}`}>
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-white/5 pt-4 flex flex-wrap gap-2">
+            {SEGMENT_ORDER.map((t) => {
+              const meta = SEGMENT_META[t];
+              const count = byType[t];
+              if (!count) return null;
+              return (
+                <span key={t} className={`chip ${meta.color}`}>
+                  {meta.icon} {meta.label}{" "}
+                  <span className="opacity-60">{count}</span>
+                </span>
+              );
+            })}
+            {rejected > 0 && (
+              <span className="chip bg-danger/10 text-rose-400">
+                {rejected} rejected
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {mine.length === 0 ? (
         <p className="mt-3 text-slate-400">
           You haven&apos;t submitted anything yet.{" "}
@@ -103,17 +184,19 @@ export default async function AccountPage() {
               }
               className="card flex items-center justify-between gap-4 p-4 transition hover:shadow-glow"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <SegmentChip type={s.segmentType as SegmentTypeName} />
-                <span className="mono text-sm text-slate-300">
-                  {s.imdbId}
-                  {s.season != null
-                    ? ` S${s.season}E${s.episode}`
-                    : " (movie)"}
-                </span>
-                <span className="mono text-xs text-slate-500">
-                  {msToClock(s.startMs)}–{msToClock(s.endMs)}
-                </span>
+                <div className="min-w-0">
+                  <span className="truncate text-sm text-slate-200">
+                    {s.titleName ?? s.imdbId}
+                    {s.season != null
+                      ? ` S${s.season}E${s.episode}`
+                      : ""}
+                  </span>
+                  <span className="mono ml-2 text-xs text-slate-500">
+                    {msToClock(s.startMs)}–{msToClock(s.endMs)}
+                  </span>
+                </div>
               </div>
               <StatusBadge status={s.status} />
             </Link>
