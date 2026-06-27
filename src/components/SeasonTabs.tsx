@@ -78,7 +78,7 @@ export function SeasonTabs({
         {activeEps.map((ep) => (
           <div
             key={`${ep.season}-${ep.episode}`}
-            className="card flex items-center justify-between gap-4 p-4 transition hover:shadow-glow"
+            className="card min-w-0 flex items-center justify-between gap-4 p-4 transition hover:shadow-glow"
           >
             <Link
               href={`/title/${imdbId}/${ep.season}/${ep.episode}`}
