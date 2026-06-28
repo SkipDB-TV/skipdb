@@ -1,6 +1,17 @@
-# SkipDB
+<div align="center">
+  <img src=".github/skipdb_full.jpg" width="680" alt="SkipDB" />
 
-![SkipDB](.github/skipdb_full.jpg)
+### Intros. Recaps. Credits. Previews. Open data, forever.
+
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
+[![Data: ODbL 1.0](https://img.shields.io/badge/Data-ODbL_1.0-green.svg)](./DATA-LICENSE)
+[![Status](https://uptime.betterstack.com/status-badges/v1/monitor/2qlce.svg)](https://status.skipdb.tv)
+
+</div>
+
+---
+
+# SkipDB
 
 **Open, crowdsourced skip timestamps for movies & TV.** Intros, recaps, outros and "next-time"
 previews — contributed by people, reviewed by the community, and **published openly** so the data
@@ -8,6 +19,7 @@ can never be quietly locked away or sold off.
 
 - **Code license:** [AGPL-3.0](./LICENSE)
 - **Data license:** [ODbL 1.0 + reciprocity](./DATA-LICENSE) (unless you have explicit written permission)
+- **Status:** [status.skipdb.tv](https://status.skipdb.tv)
 
 > SkipDB's whole point is that the data stays open. Other services collect community submissions
 > but keep the resulting database proprietary so they can monetize it or shut it down. SkipDB keeps

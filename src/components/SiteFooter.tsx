@@ -70,6 +70,14 @@ export function SiteFooter() {
             >
               hello@skipdb.tv
             </a>
+            <a
+              href="https://status.skipdb.tv"
+              target="_blank"
+              rel="noreferrer"
+              className="block hover:text-white"
+            >
+              Status
+            </a>
           </div>
         </div>
       </div>
