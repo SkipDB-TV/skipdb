@@ -29,11 +29,15 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Upload to GitHub Releases (rolling data-latest tag)
+      - name: Get date
+        id: date
+        run: echo "tag=data-$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: data-latest
-          name: "Data dump (latest)"
+          tag_name: ${{ steps.date.outputs.tag }}
+          name: "Data dump ${{ steps.date.outputs.tag }}"
           body: |
             Auto-generated daily export of all SkipDB segments (all statuses) with vote counts. No user data.
 
@@ -42,5 +46,5 @@ jobs:
             Licensed [ODbL 1.0 + Service Provider Reciprocity](https://skipdb.tv/license).
           files: |
             skipdb-dump.json
-          make_latest: false
+          make_latest: true
           prerelease: false
