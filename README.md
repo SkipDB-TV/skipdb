@@ -6,6 +6,7 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 [![Data: ODbL 1.0](https://img.shields.io/badge/Data-ODbL_1.0-green.svg)](./DATA-LICENSE)
 [![Status](https://uptime.betterstack.com/status-badges/v1/monitor/2qlce.svg)](https://status.skipdb.tv)
+[![GitHub Stars](https://img.shields.io/github/stars/SkipDB-TV/skipdb?style=social)](https://github.com/SkipDB-TV/skipdb)
 
 </div>
 
