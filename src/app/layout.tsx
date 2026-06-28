@@ -3,6 +3,7 @@ import "./globals.css";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NavigationProgress } from "@/components/NavigationProgress";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { BASE_URL } from "@/lib/urls";
 
@@ -37,12 +38,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the anti-FOUC script may add "dark" before
+    // React hydrates, causing a class mismatch that is harmless.
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        {/* Anti-FOUC: set theme class synchronously before first paint */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',(t||'dark')==='dark')}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="flex min-h-screen flex-col">
-        <NavigationProgress />
-        <SiteNav />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <ThemeProvider>
+          <NavigationProgress />
+          <SiteNav />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-20 border-t border-white/5 py-10 text-sm text-slate-400">
+    <footer className="mt-20 border-t border-black/8 py-10 text-sm text-slate-400 dark:border-white/5">
       <div className="container-page flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="max-w-sm space-y-3">
           <Link href="/" className="group inline-flex items-center gap-2">

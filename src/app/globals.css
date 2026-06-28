@@ -8,14 +8,61 @@
     Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono",
     "Fira Code", Menlo, Consolas, monospace;
+
+  /* ── Light mode ─────────────────────────────────────────────────────── */
+
+  /* midnight-* become light grays in light mode (RGB channel triplets) */
+  --midnight-950: 248 250 252;   /* slate-50  */
+  --midnight-900: 241 245 249;   /* slate-100 */
+  --midnight-850: 226 232 240;   /* slate-200 */
+  --midnight-800: 203 213 225;   /* slate-300 */
+  --midnight-700: 148 163 184;   /* slate-400 */
+  --midnight-600: 100 116 139;   /* slate-500 */
+  --midnight-500: 71 85 105;     /* slate-600 */
+
+  /* slate-200…600 invert: dark text on light background */
+  --slate-200: 30 41 59;         /* slate-800  – primary text   */
+  --slate-300: 51 65 85;         /* slate-700  – secondary text */
+  --slate-400: 100 116 139;      /* slate-500  – muted text     */
+  --slate-500: 148 163 184;      /* slate-400  – faint text     */
+  --slate-600: 203 213 225;      /* slate-300  – very faint     */
+
+  --shadow-card: 0 1px 4px 0 rgb(0 0 0 / 0.08), 0 4px 16px -4px rgb(0 0 0 / 0.12);
+
+  color-scheme: light;
+}
+
+.dark {
+  /* ── Dark mode ──────────────────────────────────────────────────────── */
+
+  --midnight-950: 10 10 20;      /* #0a0a14 */
+  --midnight-900: 15 15 31;      /* #0f0f1f */
+  --midnight-850: 21 21 42;      /* #15152a */
+  --midnight-800: 27 27 51;      /* #1b1b33 */
+  --midnight-700: 38 38 74;      /* #26264a */
+  --midnight-600: 52 52 95;      /* #34345f */
+  --midnight-500: 74 74 122;     /* #4a4a7a */
+
+  --slate-200: 226 232 240;      /* #e2e8f0 */
+  --slate-300: 203 213 225;      /* #cbd5e1 */
+  --slate-400: 148 163 184;      /* #94a3b8 */
+  --slate-500: 100 116 139;      /* #64748b */
+  --slate-600: 71 85 105;        /* #475569 */
+
+  --shadow-card: 0 10px 40px -20px rgba(0, 0, 0, 0.8);
+
+  color-scheme: dark;
 }
 
 @layer base {
-  html {
-    color-scheme: dark;
-  }
   body {
-    @apply bg-midnight-950 text-slate-200 antialiased;
+    @apply antialiased;
+    background-color: rgb(var(--midnight-950));
+    color: rgb(var(--slate-200));
+    min-height: 100vh;
+  }
+
+  .dark body {
     background-image:
       radial-gradient(
         ellipse 70% 50% at 50% -8%,
@@ -27,14 +74,13 @@
         rgba(45, 212, 191, 0.1),
         transparent 60%
       );
-    min-height: 100vh;
   }
+
   ::selection {
     background: rgba(45, 212, 191, 0.3);
   }
 }
 
-/* Tailwind v4: shared button base is a real @utility so it can be @applied. */
 @utility btn {
   @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
     text-sm font-medium transition focus:outline-none focus:ring-2
@@ -45,31 +91,100 @@
   .container-page {
     @apply mx-auto w-full max-w-6xl px-5;
   }
+
   .card {
-    @apply rounded-2xl border border-white/5 bg-midnight-900/70 backdrop-blur
-      shadow-card;
+    @apply rounded-2xl shadow-card;
+    background-color: rgb(255 255 255);
+    border: 1px solid rgb(0 0 0 / 0.1);
   }
+  .dark .card {
+    background-color: rgb(var(--midnight-900) / 0.7);
+    border-color: rgb(255 255 255 / 0.05);
+    backdrop-filter: blur(8px);
+  }
+
   .btn-primary {
     @apply btn bg-skip text-midnight-950 hover:bg-skip-bright;
   }
+
   .btn-ghost {
-    @apply btn border border-white/10 text-slate-200 hover:bg-white/5;
+    @apply btn;
+    border: 1px solid rgb(0 0 0 / 0.12);
+    color: rgb(var(--slate-200));
   }
+  .btn-ghost:hover {
+    background-color: rgb(0 0 0 / 0.05);
+  }
+  .dark .btn-ghost {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+  .dark .btn-ghost:hover {
+    background-color: rgb(255 255 255 / 0.05);
+  }
+
   .btn-danger {
     @apply btn bg-danger/90 text-white hover:bg-danger;
   }
+
   .input {
-    @apply w-full rounded-xl border border-white/10 bg-midnight-850 px-4 py-2.5
-      text-slate-100 placeholder:text-slate-500 focus:border-skip/50
-      focus:outline-none focus:ring-2 focus:ring-skip/30;
+    @apply w-full rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-skip/30;
+    background-color: rgb(var(--midnight-850));
+    border: 1px solid rgb(0 0 0 / 0.1);
+    color: rgb(var(--slate-200));
   }
+  .input::placeholder {
+    color: rgb(var(--slate-500));
+  }
+  .input:focus {
+    border-color: rgb(45 212 191 / 0.5);
+  }
+  .dark .input {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs
-      font-medium;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
+
   .mono {
     font-family: var(--font-mono);
   }
+}
+
+/* Unlayered — beats all @layer utilities regardless of specificity */
+:root:not(.dark) .text-white {
+  color: rgb(15 23 42);
+}
+:root:not(.dark) .hover\:text-white:hover {
+  color: rgb(15 23 42);
+}
+:root:not(.dark) .card {
+  background-color: #ffffff;
+  border: 1px solid rgb(0 0 0 / 0.1);
+}
+
+/* ── Light mode: flip white-opacity borders/dividers/backgrounds ─────────── */
+:root:not(.dark) .border-white\/5  { border-color: rgb(0 0 0 / 0.08); }
+:root:not(.dark) .border-white\/10 { border-color: rgb(0 0 0 / 0.1);  }
+:root:not(.dark) .border-white\/20 { border-color: rgb(0 0 0 / 0.15); }
+:root:not(.dark) .divide-white\/5  > :not([hidden]) ~ :not([hidden]) { border-color: rgb(0 0 0 / 0.08); }
+:root:not(.dark) .bg-white\/3  { background-color: rgb(0 0 0 / 0.03); }
+:root:not(.dark) .bg-white\/5  { background-color: rgb(0 0 0 / 0.04); }
+:root:not(.dark) .bg-white\/10 { background-color: rgb(0 0 0 / 0.06); }
+:root:not(.dark) .hover\:bg-white\/5:hover  { background-color: rgb(0 0 0 / 0.04); }
+:root:not(.dark) .hover\:bg-white\/8:hover  { background-color: rgb(0 0 0 / 0.06); }
+
+/* ── Light mode: pale/bright text → dark readable equivalents ─────────────── */
+:root:not(.dark) .text-ok            { color: rgb(4 120 87);   }  /* emerald-700 */
+:root:not(.dark) .text-skip-bright   { color: rgb(15 118 110); }  /* teal-700    */
+:root:not(.dark) .text-signal-bright { color: rgb(109 40 217); }  /* violet-700  */
+:root:not(.dark) .text-amber-300     { color: rgb(180 83 9);   }  /* amber-700   */
+:root:not(.dark) .text-rose-300      { color: rgb(190 18 60);  }  /* rose-700    */
+
+/* ── Light mode: input boxes ─────────────────────────────────────────────── */
+:root:not(.dark) .input {
+  background-color: rgb(255 255 255);
+  border-color: rgb(0 0 0 / 0.18);
 }
 
 /* The SkipDB signature: a thin animated "scan" line used as an accent. */
@@ -91,7 +206,14 @@
   animation: nav-progress 1.2s ease-in-out infinite;
 }
 
-/* Skeleton shimmer (used in loading.tsx files) */
+/* Skeleton shimmer */
 .skeleton {
-  @apply rounded-lg bg-white/8 animate-pulse;
+  @apply rounded-lg animate-pulse;
+  background-color: rgb(255 255 255 / 0.08);
+}
+.dark .skeleton {
+  background-color: rgb(255 255 255 / 0.08);
+}
+:root:not(.dark) .skeleton {
+  background-color: rgb(0 0 0 / 0.06);
 }

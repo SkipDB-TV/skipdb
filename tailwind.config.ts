@@ -4,29 +4,41 @@ import type { Config } from "tailwindcss";
  * SkipDB design language: a dark "playback timeline" aesthetic.
  * Base = deep indigo/violet ("midnight"), accent = neon "skip-forward" cyan,
  * with a warm amber for pending/review states.
+ *
+ * Colors use CSS custom properties so they flip between light and dark without
+ * touching individual component files. The <alpha-value> placeholder lets
+ * Tailwind's opacity modifiers (e.g. bg-midnight-900/70) work correctly.
  */
 const config: Config = {
   content: ["./src/**/*.{ts,tsx,mdx}"],
+  darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
         midnight: {
-          950: "#0a0a14",
-          900: "#0f0f1f",
-          850: "#15152a",
-          800: "#1b1b33",
-          700: "#26264a",
-          600: "#34345f",
-          500: "#4a4a7a",
+          950: "rgb(var(--midnight-950) / <alpha-value>)",
+          900: "rgb(var(--midnight-900) / <alpha-value>)",
+          850: "rgb(var(--midnight-850) / <alpha-value>)",
+          800: "rgb(var(--midnight-800) / <alpha-value>)",
+          700: "rgb(var(--midnight-700) / <alpha-value>)",
+          600: "rgb(var(--midnight-600) / <alpha-value>)",
+          500: "rgb(var(--midnight-500) / <alpha-value>)",
+        },
+        // Override the slate shades used for UI text so they invert between
+        // light and dark without requiring dark: prefixes on every JSX element.
+        slate: {
+          200: "rgb(var(--slate-200) / <alpha-value>)",
+          300: "rgb(var(--slate-300) / <alpha-value>)",
+          400: "rgb(var(--slate-400) / <alpha-value>)",
+          500: "rgb(var(--slate-500) / <alpha-value>)",
+          600: "rgb(var(--slate-600) / <alpha-value>)",
         },
         skip: {
-          // neon skip-forward accent
           DEFAULT: "#2dd4bf",
           bright: "#5eead4",
           dim: "#0f766e",
         },
         signal: {
-          // secondary accent (intro vs recap vs outro chips, links)
           DEFAULT: "#a78bfa",
           bright: "#c4b5fd",
         },
@@ -45,7 +57,7 @@ const config: Config = {
       },
       boxShadow: {
         glow: "0 0 0 1px rgba(45,212,191,0.25), 0 8px 30px -8px rgba(45,212,191,0.35)",
-        card: "0 10px 40px -20px rgba(0,0,0,0.8)",
+        card: "var(--shadow-card)",
       },
       backgroundImage: {
         "grid-fade":

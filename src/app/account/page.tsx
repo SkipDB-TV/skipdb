@@ -144,7 +144,7 @@ export default async function AccountPage() {
               </div>
             ))}
           </div>
-          <div className="border-t border-white/5 pt-4 flex flex-wrap gap-2">
+          <div className="border-t border-black/8 pt-4 flex flex-wrap gap-2 dark:border-white/5">
             {SEGMENT_ORDER.map((t) => {
               const meta = SEGMENT_META[t];
               const count = byType[t];
