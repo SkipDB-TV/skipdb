@@ -12,14 +12,12 @@ import { writeFileSync } from "fs";
 import { db } from "../src/db";
 import { segments, titles } from "../src/db/schema";
 import { eq } from "drizzle-orm";
-import { msToSec } from "../src/lib/time";
 
 console.log("Querying all segments…");
-const rows = await db
+const data = await db
   .select({
     id: segments.id,
     imdb_id: segments.imdbId,
-    title: titles.name,
     media_type: titles.mediaType,
     season: segments.season,
     episode: segments.episode,
@@ -37,12 +35,6 @@ const rows = await db
   })
   .from(segments)
   .leftJoin(titles, eq(segments.titleId, titles.id));
-
-const data = rows.map((r) => ({
-  ...r,
-  start_sec: msToSec(r.start_ms),
-  end_sec: msToSec(r.end_ms),
-}));
 
 writeFileSync(
   "skipdb-dump.json",

@@ -3,7 +3,6 @@ import { segments, titles } from "@/db/schema";
 import { json, apiError, preflight } from "@/lib/api";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { and, asc, eq, gt, or } from "drizzle-orm";
-import { msToSec } from "@/lib/time";
 
 export const runtime = "nodejs";
 
@@ -87,10 +86,12 @@ export async function GET(req: Request) {
       429,
     );
 
+  // Shared select shape for the full dump and the delta, so a single import
+  // path handles both. title and the *_sec fields are intentionally omitted
+  // (derivable from imdb_id and *_ms), keeping the export lean.
   const fields = {
     id: segments.id,
     imdb_id: segments.imdbId,
-    title: titles.name,
     media_type: titles.mediaType,
     season: segments.season,
     episode: segments.episode,
@@ -108,17 +109,11 @@ export async function GET(req: Request) {
 
   // --- Full dump (existing behaviour) ---
   if (!isDelta) {
-    const rows = await db
+    const data = await db
       .select(fields)
       .from(segments)
       .leftJoin(titles, eq(segments.titleId, titles.id))
       .where(eq(segments.status, "approved"));
-
-    const data = rows.map((r) => ({
-      ...r,
-      start_sec: msToSec(r.start_ms),
-      end_sec: msToSec(r.end_ms),
-    }));
 
     return json(
       {
@@ -187,15 +182,9 @@ export async function GET(req: Request) {
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;
-  const page = hasMore ? rows.slice(0, limit) : rows;
+  const data = hasMore ? rows.slice(0, limit) : rows;
 
-  const data = page.map((r) => ({
-    ...r,
-    start_sec: msToSec(r.start_ms),
-    end_sec: msToSec(r.end_ms),
-  }));
-
-  const last = page[page.length - 1];
+  const last = data[data.length - 1];
   const nextCursor =
     hasMore && last ? encodeCursor(last.updated_at, last.id) : null;
 
