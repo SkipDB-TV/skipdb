@@ -2,8 +2,8 @@ name: Export data dump
 
 on:
   schedule:
-    # Everyday at 03:00 UTC
-    - cron: "0 3 * * *"
+    # Everyday at 05:23 UTC
+    - cron: "23 5 * * *"
   workflow_dispatch:
 
 jobs:

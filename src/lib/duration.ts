@@ -1,3 +1,5 @@
+// Imported by the Cloudflare Worker (deploy/cloudflare-segments-worker).
+// Keep this file free of Node.js, Next.js, and database imports.
 import { config } from "./config";
 
 export type MatchKind = "exact" | "shifted" | "agnostic" | "out-of-range";

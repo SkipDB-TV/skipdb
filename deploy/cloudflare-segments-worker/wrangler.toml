@@ -1,0 +1,17 @@
+name = "skipdb-worker"
+main = "src/index.ts"
+compatibility_date = "2025-03-13"
+preview_urls = false
+
+routes = [
+  { pattern = "api.skipdb.tv/api/segments*", zone_name = "skipdb.tv" }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "skipdb"
+database_id = "743dafdc-d9b8-4fa4-a458-2413f63b0ee3"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "ade6575296194ad2bce66c633f7ead09"
