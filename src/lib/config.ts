@@ -1,3 +1,6 @@
+// Imported by the Cloudflare Worker (deploy/cloudflare-segments-worker).
+// Keep this file free of Node.js, Next.js, and database imports.
+
 /**
  * Central tunable configuration for SkipDB's matching and review behavior.
  * All durations are in milliseconds.

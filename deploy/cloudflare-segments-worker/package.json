@@ -1,0 +1,17 @@
+{
+  "name": "cloudflare-segments-worker",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "import": "tsx scripts/import.ts",
+    "import:full": "tsx scripts/import.ts --full"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260629.1",
+    "tsx": "^4",
+    "wrangler": "^4"
+  },
+  "packageManager": "pnpm@11.9.0"
+}
