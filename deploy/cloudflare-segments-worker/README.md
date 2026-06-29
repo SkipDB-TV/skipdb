@@ -86,7 +86,7 @@ Fill in the values:
 This downloads the dump from GitHub Releases and writes every episode to D1.
 
 ```sh
-pnpm import:full
+pnpm d1:import:full
 ```
 
 ### 7. Deploy the Worker
@@ -101,10 +101,10 @@ pnpm deploy
 
 ```sh
 # Incremental — only upserts episodes whose segments changed since last run
-pnpm import
+pnpm d1:import
 
 # Full replace — re-upserts every episode (use after schema changes or first run)
-pnpm import:full
+pnpm d1:import:full
 ```
 
 ---

@@ -17,13 +17,11 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: deploy/cloudflare-segments-worker/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-        working-directory: deploy/cloudflare-segments-worker
       - name: Import to D1
         working-directory: deploy/cloudflare-segments-worker
         env:
           IMPORT_CF_ACCOUNT_ID: ${{ secrets.IMPORT_CF_ACCOUNT_ID }}
           IMPORT_CF_DATABASE_ID: ${{ secrets.IMPORT_CF_DATABASE_ID }}
           IMPORT_CF_API_TOKEN: ${{ secrets.IMPORT_CF_API_TOKEN }}
-        run: pnpm import
+        run: pnpm run d1:import

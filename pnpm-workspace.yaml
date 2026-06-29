@@ -1,4 +1,11 @@
+packages:
+  - deploy/cloudflare-segments-worker
+
 allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+  workerd: true
+
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types@4.20260629.1'
