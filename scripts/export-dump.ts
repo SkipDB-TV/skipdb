@@ -17,6 +17,7 @@ import { msToSec } from "../src/lib/time";
 console.log("Querying all segments…");
 const rows = await db
   .select({
+    id: segments.id,
     imdb_id: segments.imdbId,
     title: titles.name,
     media_type: titles.mediaType,
@@ -32,6 +33,7 @@ const rows = await db
     votes_down: segments.votesDown,
     score: segments.score,
     created_at: segments.createdAt,
+    updated_at: segments.updatedAt,
   })
   .from(segments)
   .leftJoin(titles, eq(segments.titleId, titles.id));
@@ -49,7 +51,7 @@ writeFileSync(
     license_url: "https://skipdb.tv/license",
     generated_at: new Date().toISOString(),
     count: data.length,
-    note: "Contains no PII. submitted_by is an opaque user ID for moderation continuity only. By using this data you agree to ODbL 1.0 + Service Provider Reciprocity unless you have explicit permission.",
+    note: "By using this data you agree to ODbL 1.0 + Service Provider Reciprocity unless you have explicit permission.",
     segments: data,
   }),
 );

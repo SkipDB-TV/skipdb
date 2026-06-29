@@ -37,6 +37,7 @@ export async function GET(req: Request) {
 
   const rows = await db
     .select({
+      id: segments.id,
       imdb_id: segments.imdbId,
       title: titles.name,
       media_type: titles.mediaType,
@@ -51,6 +52,7 @@ export async function GET(req: Request) {
       votes_down: segments.votesDown,
       score: segments.score,
       created_at: segments.createdAt,
+      updated_at: segments.updatedAt,
     })
     .from(segments)
     .leftJoin(titles, eq(segments.titleId, titles.id))
@@ -69,7 +71,7 @@ export async function GET(req: Request) {
       attribution: "SkipDB — https://github.com/SkipDB-TV/skipdb (open data)",
       generated_at: new Date().toISOString(),
       count: data.length,
-      note: "Contains no PII. submitted_by is an opaque user ID for moderation continuity only. By using this data you agree to ODbL 1.0 + Service Provider Reciprocity unless you have explicit permission.",
+      note: "By using this data you agree to ODbL 1.0 + Service Provider Reciprocity unless you have explicit permission.",
       segments: data,
     },
     {
