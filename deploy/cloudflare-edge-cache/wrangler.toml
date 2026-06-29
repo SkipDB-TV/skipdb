@@ -1,0 +1,57 @@
+# SkipDB edge read-cache — a generic, self-hostable Cloudflare Worker.
+#
+# A thin, account-free caching reverse proxy that sits in front of a SkipDB READ API
+# (https://api.skipdb.tv by default) and edge-caches its responses on Cloudflare, shielding the
+# single origin from read load. It serves the origin's data verbatim and grows no data of its own.
+# OPTIONAL: deploy it only if you want an edge cache in front of your SkipDB instance.
+#
+# Contract:
+#   GET  https://<your-worker-domain>/<path><query>
+#        -> served from the Cloudflare Cache API on a hit; on a miss, fetched once from
+#           <SKIPDB_ORIGIN>/<path><query>, cached honoring the origin Cache-Control (a sane default
+#           TTL when the origin sets none), and returned verbatim (content-type + body preserved).
+#        -> response carries:
+#             x-edge-cache: skipdb edge read-cache
+#             x-cache     : HIT | MISS | BYPASS  (cf-cache-status is also populated by the edge cache)
+#   POST / PUT / PATCH / DELETE (writes / contribute) are NEVER proxied -> 405. Reads only.
+#
+# Fail-soft: any upstream/network/timeout error passes the origin status through (or 502/504 on a
+# hard failure); the caller falls back to talking to the origin directly. Bounded: an upstream
+# fetch timeout + a response size cap.
+#
+# Deploy:
+#   npx wrangler deploy
+# Point it at your origin by setting SKIPDB_ORIGIN below (defaults to https://api.skipdb.tv).
+
+name = "skipdb-edge-cache"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Bind your own Cloudflare account when deploying (or pass --account-id on the CLI):
+# account_id = "<your-cloudflare-account-id>"
+
+# Optional: serve the cache from your own hostname. Uncomment and set to a host on a zone in your
+# Cloudflare account. With no route, the Worker is reachable at its workers.dev subdomain.
+# routes = [{ pattern = "skip-cache.example.com", custom_domain = true }]
+
+[observability]
+enabled = true
+
+[vars]
+# Upstream SkipDB READ origin to mirror. Point this at your own SkipDB instance if self-hosting.
+# Swapping the origin host needs no code change.
+SKIPDB_ORIGIN = "https://api.skipdb.tv"
+# Default edge TTL (seconds) applied ONLY when the origin response sets no usable Cache-Control
+# max-age / s-maxage. Keeps even header-less reads cached so the origin is shielded. The /api/dump
+# 302 (which the origin marks max-age=0) is floored to DUMP_DEFAULT_TTL below so the redirect is cached.
+DEFAULT_TTL = "300"
+# Floor TTL for the dump route (/api/dump and any /dump path). The dump is large + changes daily, so
+# a longer cache is correct even though the origin marks the 302 max-age=0.
+DUMP_DEFAULT_TTL = "3600"
+# Hard ceiling on any cached TTL (seconds), so a misconfigured origin header cannot pin a stale object.
+MAX_TTL = "86400"
+# Upstream fetch timeout (ms). A slow origin must not hang the edge.
+ORIGIN_TIMEOUT_MS = "10000"
+# Response body size cap (bytes). Reads are small JSON / a redirect; anything larger is passed
+# through UNCACHED rather than buffered, so the cache can never be filled with an oversized object.
+MAX_BODY_BYTES = "5242880"

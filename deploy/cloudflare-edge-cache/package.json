@@ -1,0 +1,17 @@
+{
+  "name": "skipdb-edge-cache",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Optional, self-hostable Cloudflare Worker that edge-caches a SkipDB READ API to shield the origin from read load. Reads only (writes/contribute are never proxied), honors the origin Cache-Control, bounded by an upstream timeout + size cap, and fully fail-soft.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0"
+  }
+}
