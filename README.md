@@ -155,6 +155,17 @@ pnpm db:import https://github.com/SkipDB-TV/skipdb/releases/download/data-latest
 pnpm db:resolve   # rebuild the resolved_segments cache
 ```
 
+### Incremental delta sync
+
+`GET /api/dump?since=<ISO8601>` (alias `updated_after`) returns only approved segments whose
+`updated_at` is newer than `since`, instead of the whole table. Each segment carries `id` and
+`updated_at`, so a mirror can keep itself current and de-dupe on `(id, updated_at)`. Page through
+with `limit` (default 1000, max 5000) and the returned `next_cursor` until `has_more` is `false`.
+
+```bash
+curl "https://skipdb.tv/api/dump?since=2026-01-01T00:00:00Z&limit=1000"
+```
+
 ## Hosting a mirror or fork
 
 See [/data](/data) on the live site for full instructions. Short version:

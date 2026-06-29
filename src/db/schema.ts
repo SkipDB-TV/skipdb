@@ -225,6 +225,13 @@ export const segments = pgTable(
     ),
     byTitle: index("segments_title_idx").on(table.titleId),
     byStatus: index("segments_status_idx").on(table.status),
+    // Powers the incremental delta dump (?since=): filter status=approved,
+    // then range-scan + order by updated_at. Keyset pagination tie-breaks on
+    // id, which is already the table's primary key.
+    byStatusUpdated: index("segments_status_updated_idx").on(
+      table.status,
+      table.updatedAt,
+    ),
   }),
 );
 

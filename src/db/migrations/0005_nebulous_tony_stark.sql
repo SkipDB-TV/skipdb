@@ -1,0 +1,1 @@
+CREATE INDEX "segments_status_updated_idx" ON "segments" USING btree ("status","updated_at");

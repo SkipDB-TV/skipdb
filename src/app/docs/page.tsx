@@ -174,6 +174,36 @@ export default function DocsPage() {
             The full open data dump of every approved segment — no user data.
             Licensed ODbL 1.0 + reciprocity. This is the guarantee that the data stays free.
           </p>
+          <p className="mt-2">
+            Pass <span className="mono">since</span> (alias{" "}
+            <span className="mono">updated_after</span>) with an ISO 8601
+            timestamp to get an <strong className="text-white">incremental
+            delta</strong>: only approved segments whose{" "}
+            <span className="mono">updated_at</span> is newer than{" "}
+            <span className="mono">since</span>, ordered by{" "}
+            <span className="mono">updated_at</span> then{" "}
+            <span className="mono">id</span>. Each segment carries{" "}
+            <span className="mono">id</span> and{" "}
+            <span className="mono">updated_at</span> so a mirror can de-dupe on{" "}
+            <span className="mono">(id, updated_at)</span>. Page through with{" "}
+            <span className="mono">limit</span> (default 1000, max 5000) and the
+            returned <span className="mono">next_cursor</span> until{" "}
+            <span className="mono">has_more</span> is{" "}
+            <span className="mono">false</span>.
+          </p>
+          <Code>{`curl "${API_URL}/api/dump?since=2026-01-01T00:00:00Z&limit=1000"
+
+{
+  "since": "2026-01-01T00:00:00.000Z",
+  "count": 1000,
+  "has_more": true,
+  "next_cursor": "MjAyNi0wMS0wM1QxMjowMDowMC4wMDBafDQyMDE",
+  "segments": [
+    { "id": 4201, "imdb_id": "tt0903747", "season": 1, "episode": 1,
+      "segment_type": "intro", "start_ms": 61000, "end_ms": 91000,
+      "updated_at": "2026-01-03T12:00:00.000Z", ... }
+  ]
+}`}</Code>
         </Endpoint>
 
         <Endpoint method="POST" path="/api/keys">
