@@ -73,7 +73,7 @@ export async function PATCH(
   }
   const type = segment.segmentType as SegmentTypeName;
   const startMs = roundTime(
-    e.start_ms ?? parseTimeToMs(e.start_sec) ?? segment.startMs,
+    e.start_ms ?? segment.startMs,
   );
   const durationMs = e.clear_duration
     ? null
@@ -83,7 +83,7 @@ export async function PATCH(
         )
       : segment.durationMs;
   let endMs = roundTime(
-    e.end_ms ?? parseTimeToMs(e.end_sec) ?? segment.endMs,
+    e.end_ms ?? segment.endMs,
   );
   // Snap outro end to duration when within the threshold.
   if (

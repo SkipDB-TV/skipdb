@@ -407,8 +407,8 @@ function TimeHint({ value }: { value: string }) {
 
 interface FormPayload {
   segment_type: SegmentTypeName;
-  start_sec: string;
-  end_sec: string;
+  start_ms: number;
+  end_ms: number;
   duration_sec?: string;
   clear_duration?: boolean;
 }
@@ -454,10 +454,17 @@ function SegmentForm({
     }
     setBusy(true);
     try {
+      const startMs = parseTimeToMs(start.trim());
+      const endMs = parseTimeToMs(end.trim());
+      if (startMs == null || endMs == null) {
+        setMsg({ ok: false, text: "Invalid time format" });
+        setBusy(false);
+        return;
+      }
       const payload: FormPayload = {
         segment_type: type,
-        start_sec: start,
-        end_sec: end,
+        start_ms: startMs,
+        end_ms: endMs,
       };
       if (mode === "edit" && duration.trim() === "")
         payload.clear_duration = true;
@@ -490,8 +497,8 @@ function SegmentForm({
     try {
       const { ok, data } = await onSubmit({
         segment_type: type,
-        start_sec: "0",
-        end_sec: "0",
+        start_ms: 0,
+        end_ms: 0,
       });
       if (!ok) {
         setMsg({ ok: false, text: data.error ?? "Something went wrong" });

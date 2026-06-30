@@ -50,7 +50,7 @@ export function SeasonTabs({
             <button
               key={season}
               onClick={() => setActiveSeason(season)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
+              className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
                 isActive
                   ? "bg-skip text-midnight-950"
                   : "bg-black/5 text-slate-800 hover:bg-black/10 hover:text-slate-900 dark:bg-midnight-900/70 dark:text-slate-300 dark:ring-1 dark:ring-white/5 dark:hover:bg-midnight-900/90 dark:hover:text-slate-200"

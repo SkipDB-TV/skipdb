@@ -96,7 +96,6 @@ export default function DumpPage() {
       "status": "approved",
       "submitted_by": "usr_abc123",
       "start_ms": 61000, "end_ms": 91000,
-      "start_sec": 61,   "end_sec": 91,
       "votes_up": 12, "votes_down": 0, "score": 12
     },
     ...

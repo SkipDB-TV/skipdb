@@ -50,9 +50,8 @@ export default function DocsPage() {
         <code className="mono text-slate-300">{API_URL}</code>.
         Reading is open and rate-limited ({config.limits.readPerMinute}{" "}
         req/min). Writing requires a logged-in session or an API key (
-        {config.limits.writePerMinute} req/min). All timestamps are returned in
-        both <span className="mono">_ms</span> and{" "}
-        <span className="mono">_sec</span>. Data is licensed{" "}
+        {config.limits.writePerMinute} req/min). All timestamps are in
+        milliseconds (<span className="mono">_ms</span>). Data is licensed{" "}
         <a href="/license" className="text-skip hover:underline">ODbL 1.0 + reciprocity</a>{" "}
         unless you have explicit permission.
       </p>
@@ -109,8 +108,7 @@ export default function DocsPage() {
   "segments": {
     "intro": {
       "start_ms": 61000, "end_ms": 91000,
-      "start_sec": 61,   "end_sec": 91,
-      "match": "exact", "adjusted": false, "offset_sec": 0,
+      "match": "exact", "adjusted": false, "offset_ms": 0,
       "confidence": 0.93
     },
     "recap":   null,
@@ -126,8 +124,7 @@ export default function DocsPage() {
             Submit a segment. Auth via{" "}
             <span className="mono">Authorization: Bearer skdb_…</span> or{" "}
             <span className="mono">X-API-Key</span> (or a session cookie). Times
-            accept <span className="mono">*_ms</span> (numbers) or{" "}
-            <span className="mono">*_sec</span> (seconds or clock strings).
+            use <span className="mono">*_ms</span> (milliseconds).
             Submitting implies agreement to publish under{" "}
             <a href="/license" className="text-skip hover:underline">ODbL 1.0 + reciprocity</a>{" "}
             (see <a href="/terms" className="text-skip hover:underline">terms</a>).

@@ -27,8 +27,6 @@ export const submitSchema = z
 
     start_ms: z.number().optional(),
     end_ms: z.number().optional(),
-    start_sec: flexibleTime.optional(),
-    end_sec: flexibleTime.optional(),
 
     duration_ms: z.number().optional(),
     duration_sec: flexibleTime.optional(),
@@ -38,15 +36,15 @@ export const submitSchema = z
     agree_terms: z.boolean().optional(),
   })
   .transform((data, ctx) => {
-    const startMs = data.start_ms ?? parseTimeToMs(data.start_sec);
-    const submittedEndMs = data.end_ms ?? parseTimeToMs(data.end_sec);
+    const startMs = data.start_ms ?? null;
+    const submittedEndMs = data.end_ms ?? null;
     const durationMs =
       data.duration_ms ?? parseTimeToMs(data.duration_sec ?? null);
 
     if (startMs == null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "start_ms or start_sec is required",
+        message: "start_ms is required",
         path: ["start_ms"],
       });
     }
@@ -75,7 +73,7 @@ export const submitSchema = z
       if (endMs == null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "end_ms or end_sec is required",
+          message: "end_ms is required",
           path: ["end_ms"],
         });
       }
@@ -128,8 +126,6 @@ export const editSchema = z.object({
   segment_type: segmentTypeSchema.optional(),
   start_ms: z.number().optional(),
   end_ms: z.number().optional(),
-  start_sec: flexibleTime.optional(),
-  end_sec: flexibleTime.optional(),
   duration_ms: z.number().optional(),
   duration_sec: flexibleTime.optional(),
   clear_duration: z.boolean().optional(),

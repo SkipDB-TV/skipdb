@@ -8,9 +8,6 @@ import { computeConfidence } from "../../../src/lib/confidence";
 export type { AdjustMode } from "../../../src/lib/duration";
 import type { MatchKind } from "../../../src/lib/duration";
 
-// Not in app config — Worker-specific output precision.
-const TIME_GRANULARITY_MS = 100;
-
 // Not in app config — used only in the Worker's pre-computed intro estimate.
 const ESTIMATE_CONSISTENCY_TOL = 15_000;
 const ESTIMATE_CONSISTENCY_MIN = 0.8;
@@ -32,10 +29,8 @@ export interface StoredSegment {
 export interface ResolvedSegment {
   start_ms: number;
   end_ms: number;
-  start_sec: number;
-  end_sec: number;
   adjusted: boolean;
-  offset_sec: number;
+  offset_ms: number;
   match: MatchKind;
   confidence: number;
 }
@@ -46,10 +41,6 @@ interface IntroEntry {
   season: number | null;
   start_ms: number;
   end_ms: number;
-}
-
-function msToSec(ms: number): number {
-  return Math.round(ms / TIME_GRANULARITY_MS) / 10;
 }
 
 // Kept local — app's countAgreement uses `id` for identity; StoredSegment uses
@@ -110,10 +101,8 @@ export function getBestByType(
     result[type] = {
       start_ms: adj.startMs,
       end_ms: adj.endMs,
-      start_sec: msToSec(adj.startMs),
-      end_sec: msToSec(adj.endMs),
       adjusted: adj.adjusted,
-      offset_sec: msToSec(adj.offsetMs),
+      offset_ms: adj.offsetMs,
       match: adj.kind,
       confidence,
     };

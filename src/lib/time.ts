@@ -66,9 +66,7 @@ export function publicTimes(opts: {
   return {
     start_ms: opts.startMs,
     end_ms: opts.endMs,
-    start_sec: msToSec(opts.startMs),
-    end_sec: msToSec(opts.endMs),
     adjusted: opts.adjusted,
-    offset_sec: msToSec(opts.offsetMs),
+    offset_ms: opts.offsetMs,
   };
 }
