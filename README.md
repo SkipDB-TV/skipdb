@@ -152,8 +152,20 @@ pnpm db:export
 
 # Seed a fresh database from the public dump
 pnpm db:import https://github.com/SkipDB-TV/skipdb/releases/download/data-latest/skipdb-dump.json
-pnpm db:resolve   # rebuild the resolved_segments cache
 ```
+
+Every segment in the dump includes an `id` and `updated_at` field, so mirrors can do an incremental
+sync client-side without hitting the API at all:
+
+```js
+const dump = await fetch(
+  "https://github.com/SkipDB-TV/skipdb/releases/latest/download/skipdb-dump.json",
+).then((r) => r.json());
+const changed = dump.segments.filter((s) => s.updated_at > lastSyncTime);
+```
+
+At ~4 MB the full dump is fast to download via GitHub's CDN and puts zero load on the database
+regardless of how many mirrors are running. If it ever grows too big then we can look at other options or releasing a delta file.
 
 ## Hosting a mirror or fork
 
@@ -173,7 +185,6 @@ NEXT_PUBLIC_DUMP_URL=$DUMP_URL
 ```bash
 pnpm db:migrate
 pnpm db:import <dump-url>   # seed from the public dump
-pnpm db:resolve
 # deploy with your own DATABASE_URL + AUTH_SECRET etc.
 ```
 
