@@ -22,9 +22,18 @@ export async function generateMetadata({
   const id = imdbId.toLowerCase();
   const season = Number(seasonRaw);
   const episode = Number(episodeRaw);
-  if (!/^tt\d{6,10}$/.test(id) || !Number.isInteger(season) || !Number.isInteger(episode)) return {};
+  if (
+    !/^tt\d{6,10}$/.test(id) ||
+    !Number.isInteger(season) ||
+    !Number.isInteger(episode)
+  )
+    return {};
 
-  const [title] = await db.select().from(titles).where(eq(titles.imdbId, id)).limit(1);
+  const [title] = await db
+    .select()
+    .from(titles)
+    .where(eq(titles.imdbId, id))
+    .limit(1);
   if (!title) return {};
 
   const ep = await db
@@ -42,9 +51,9 @@ export async function generateMetadata({
 
   const epCode = `S${String(season).padStart(2, "0")}E${String(episode).padStart(2, "0")}`;
   const epName = ep?.name ?? `Episode ${episode}`;
-  const label = `${title.name} ${epCode} — ${epName}`;
+  const label = `${title.name} ${epCode} - ${epName}`;
   const description = ep?.overview
-    ? `${ep.overview.slice(0, 150).trimEnd()}… — skip timestamps on SkipDB.`
+    ? `${ep.overview.slice(0, 150).trimEnd()}… - skip timestamps on SkipDB.`
     : `Community skip timestamps for ${title.name} ${epCode} on SkipDB.`;
 
   return {
@@ -71,7 +80,11 @@ export default async function EpisodePage({
   const id = imdbId.toLowerCase();
   const season = Number(seasonRaw);
   const episode = Number(episodeRaw);
-  if (!/^tt\d{6,10}$/.test(id) || !Number.isInteger(season) || !Number.isInteger(episode))
+  if (
+    !/^tt\d{6,10}$/.test(id) ||
+    !Number.isInteger(season) ||
+    !Number.isInteger(episode)
+  )
     notFound();
 
   const title = await ensureTitle(id, "series");

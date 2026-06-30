@@ -7,6 +7,9 @@ routes = [
   { pattern = "api.skipdb.tv/api/segments*", zone_name = "skipdb.tv" }
 ]
 
+[observability]
+enabled = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "skipdb"

@@ -15,7 +15,7 @@
 # SkipDB
 
 **Open, crowdsourced skip timestamps for movies & TV.** Intros, recaps, outros and "next-time"
-previews — contributed by people, reviewed by the community, and **published openly** so the data
+previews - contributed by people, reviewed by the community, and **published openly** so the data
 can never be quietly locked away or sold off.
 
 - **Code license:** [AGPL-3.0](./LICENSE)

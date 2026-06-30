@@ -27,7 +27,7 @@ export async function generateMetadata({
   if (!title) return {};
   const label = title.year ? `${title.name} (${title.year})` : title.name;
   const description = title.overview
-    ? `${title.overview.slice(0, 150).trimEnd()}… — community skip timestamps on SkipDB.`
+    ? `${title.overview.slice(0, 150).trimEnd()}… - community skip timestamps on SkipDB.`
     : `Community-sourced intro, recap, outro and preview timestamps for ${label} on SkipDB.`;
   return {
     title: label,

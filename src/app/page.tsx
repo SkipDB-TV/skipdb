@@ -51,7 +51,7 @@ export default async function HomePage() {
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-300">
           SkipDB is crowdsourced intro, recap, outro and preview timestamps for
-          movies and TV — contributed by people, reviewed by the community, and{" "}
+          movies and TV - contributed by people, reviewed by the community, and{" "}
           <strong className="text-white">published openly</strong> so the data
           can never be quietly locked away or sold.
         </p>

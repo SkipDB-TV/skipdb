@@ -10,7 +10,7 @@ import { BASE_URL } from "@/lib/urls";
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "SkipDB — open, crowdsourced skip timestamps",
+    default: "SkipDB - open, crowdsourced skip timestamps",
     template: "%s · SkipDB",
   },
   description:
@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "SkipDB",
     type: "website",
-    images: [{ url: "/skipdb_512.png", width: 512, height: 512, alt: "SkipDB" }],
+    images: [
+      { url: "/skipdb_512.png", width: 512, height: 512, alt: "SkipDB" },
+    ],
   },
   twitter: {
     card: "summary",
