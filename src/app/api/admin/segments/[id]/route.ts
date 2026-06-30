@@ -3,10 +3,8 @@ import { segments, moderationLog, users } from "@/db/schema";
 import { json, apiError } from "@/lib/api";
 import { requireStaff } from "@/lib/admin";
 import { config } from "@/lib/config";
-import { recomputeResolved } from "@/lib/resolved";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import type { SegmentTypeName } from "@/lib/config";
 
 export const runtime = "nodejs";
 
@@ -69,15 +67,6 @@ export async function POST(
       })
       .where(eq(users.id, segment.submittedBy));
   }
-
-  // Approving or rejecting changes the approved set, so refresh the resolved best.
-  await recomputeResolved({
-    imdbId: segment.imdbId,
-    titleId: segment.titleId,
-    season: segment.season,
-    episode: segment.episode,
-    segmentType: segment.segmentType as SegmentTypeName,
-  });
 
   return json({ id: segmentId, status: newStatus });
 }

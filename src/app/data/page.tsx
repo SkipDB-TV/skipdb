@@ -184,16 +184,11 @@ NEXT_PUBLIC_DUMP_URL=${DUMP_URL ?? "https://github.com/SkipDB-TV/skipdb/releases
               Import the dump:{" "}
               <span className="mono text-slate-300">pnpm db:import</span>
             </li>
-            <li>
-              Rebuild resolved segments:{" "}
-              <span className="mono text-slate-300">pnpm db:resolve</span>
-            </li>
             <li>Deploy and set your env vars (see .env.example)</li>
           </ol>
           <CodeBlock>{`# Seed a fresh database from the public dump
 pnpm db:migrate
 pnpm db:import ${DUMP_URL ?? "https://github.com/SkipDB-TV/skipdb/releases/download/data-latest/skipdb-dump.json"}
-pnpm db:resolve
 
 # Then run the app
 pnpm build && pnpm start`}</CodeBlock>

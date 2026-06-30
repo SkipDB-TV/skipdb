@@ -6,7 +6,6 @@ import { getBestByType } from "@/lib/segments";
 import type { AdjustMode } from "@/lib/duration";
 import { getIntroLengthEstimate } from "@/lib/estimate";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
-import { recomputeResolved } from "@/lib/resolved";
 import { submitSchema, validateSegmentBounds } from "@/lib/validation";
 import { getActor } from "@/lib/actor";
 import { reviewSubmission } from "@/lib/review";
@@ -213,16 +212,6 @@ export async function POST(req: Request) {
       reason: `auto-updated on resubmit within 24h; ${decision.reasons.join("; ")}`,
     });
 
-    if (decision.autoApproved) {
-      await recomputeResolved({
-        imdbId: input.imdbId,
-        titleId: recentOwn.titleId,
-        season: input.season,
-        episode: input.episode,
-        segmentType: input.segmentType,
-      });
-    }
-
     return json(
       {
         id: recentOwn.id,
@@ -281,14 +270,6 @@ export async function POST(req: Request) {
       moderatorId: null,
       action: "auto-approve",
       reason: decision.reasons.join("; "),
-    });
-    // Refresh the decided/best segment for this episode + type.
-    await recomputeResolved({
-      imdbId: input.imdbId,
-      titleId: title.id,
-      season: input.season,
-      episode: input.episode,
-      segmentType: input.segmentType,
     });
   }
 

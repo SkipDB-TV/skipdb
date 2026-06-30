@@ -1,7 +1,6 @@
 import { json, apiError } from "@/lib/api";
 import { requireStaff } from "@/lib/admin";
 import { ensureTitle } from "@/lib/titles";
-import { recomputeResolved } from "@/lib/resolved";
 import { insertStaffSegment } from "@/lib/staff-submit";
 import { config } from "@/lib/config";
 import { z } from "zod";
@@ -85,21 +84,6 @@ export async function POST(req: Request) {
       results.push({ season: ep.season, episode: ep.episode, error: String(err) });
     }
   }
-
-  // Recompute resolved for all successfully inserted episodes in parallel.
-  await Promise.all(
-    results
-      .filter((r) => r.id != null)
-      .map((r) =>
-        recomputeResolved({
-          imdbId,
-          titleId: title.id,
-          season: r.season,
-          episode: r.episode,
-          segmentType: segmentType as SegmentTypeName,
-        }),
-      ),
-  );
 
   const ok = results.filter((r) => r.id != null).length;
   const skipped = results.filter((r) => r.skipped).length;

@@ -96,6 +96,7 @@ export function getBestByType(
       agreeCount: countAgreement(seg, real),
       votesUp: seg.votes_up,
       votesDown: seg.votes_down,
+      match: adj.kind,
     });
 
     result[type] = {

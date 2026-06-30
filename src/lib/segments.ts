@@ -4,7 +4,6 @@ import { and, eq, isNull, desc } from "drizzle-orm";
 import { adjustForDuration, matchRank } from "./duration";
 import type { DurationAdjustment, AdjustMode } from "./duration";
 import { publicTimes } from "./time";
-import { getResolved } from "./resolved";
 import { computeConfidence, countAgreement } from "./confidence";
 import { config } from "./config";
 import type { Segment } from "@/db/schema";
@@ -75,40 +74,13 @@ const emptyByType = (): BestByType => ({
  * Compute the single best segment per type for an episode/movie, returned as a
  * keyed object: { intro: {...}, recap: null, outro: {...}, preview: ... }.
  *
- * Each value is the best segment, `null` (no data), or
- * `{ excluded: "duration_mismatch" }` (we have data but only for streams too
- * different in length to safely match the requested one).
- *
- * - No requested duration: served from the denormalized resolved_segments table
- *   (one indexed lookup, with confidence already computed).
- * - With a requested duration: evaluated live against the (small) approved set
- *   for the episode so we can apply offset shifting and prefer a duration match.
+ * When `durationMs` is null the result uses `agnostic` match kind (no offset
+ * shifting). Callers should pass duration whenever possible for best results.
  */
 export async function getBestByType(q: SegmentQuery): Promise<BestByType> {
   const want = q.types ?? config.segmentTypes;
   const result = emptyByType();
 
-  if (q.durationMs == null) {
-    const resolved = await getResolved({
-      imdbId: q.imdbId,
-      season: q.season,
-      episode: q.episode,
-    });
-    for (const r of resolved) {
-      const type = r.segmentType as SegmentTypeName;
-      if (!want.includes(type)) continue;
-      // 0,0 is the "no segment" sentinel — confirmed absence, so return null.
-      if (r.startMs === 0 && r.endMs === 0) continue;
-      const adj = adjustForDuration(
-        { startMs: r.startMs, endMs: r.endMs, durationMs: r.durationMs },
-        null,
-      );
-      result[type] = formatPublic(r, adj, r.confidence);
-    }
-    return result;
-  }
-
-  // Duration provided: evaluate the approved submissions for this episode.
   const rows = await getEpisodeSegments({
     imdbId: q.imdbId,
     season: q.season,
@@ -144,6 +116,7 @@ export async function getBestByType(q: SegmentQuery): Promise<BestByType> {
       ),
       votesUp: winner.row.votesUp,
       votesDown: winner.row.votesDown,
+      match: winner.adj.kind,
     });
     result[type] = formatPublic(winner.row, winner.adj, confidence);
   }

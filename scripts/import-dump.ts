@@ -1,7 +1,6 @@
 /**
  * Seeds a fresh database from a SkipDB dump file (local or remote URL).
  * Safe to re-run: uses upsert (ON CONFLICT DO NOTHING for segments).
- * After importing, run 'pnpm db:resolve' to rebuild the resolved_segments cache.
  *
  * Usage:
  *   pnpm db:import                                   # uses DUMP_URL env var or skipdb-dump.json
@@ -129,5 +128,4 @@ for (let i = 0; i < dump.segments.length; i += BATCH) {
 }
 
 console.log(`\nDone — ${inserted} segments inserted.`);
-console.log("Run 'pnpm db:resolve' to rebuild the resolved_segments cache.");
 process.exit(0);

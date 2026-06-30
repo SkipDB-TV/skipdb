@@ -7,7 +7,6 @@ import { editSchema, validateSegmentBounds } from "@/lib/validation";
 import { config } from "@/lib/config";
 import { parseTimeToMs, roundTime } from "@/lib/time";
 import { reviewSubmission } from "@/lib/review";
-import { recomputeResolved } from "@/lib/resolved";
 import type { SegmentTypeName } from "@/lib/config";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 
@@ -133,15 +132,6 @@ export async function PATCH(
     reason: decision.reasons.join("; "),
   });
 
-  // Times/duration may have changed which segment wins for this type.
-  await recomputeResolved({
-    imdbId: segment.imdbId,
-    titleId: segment.titleId,
-    season: segment.season,
-    episode: segment.episode,
-    segmentType: type,
-  });
-
   return json({
     id: segment.id,
     status: decision.status,
@@ -166,14 +156,6 @@ export async function DELETE(
   const { segment } = loaded;
 
   await db.delete(segments).where(eq(segments.id, segment.id));
-
-  await recomputeResolved({
-    imdbId: segment.imdbId,
-    titleId: segment.titleId,
-    season: segment.season,
-    episode: segment.episode,
-    segmentType: segment.segmentType as SegmentTypeName,
-  });
 
   return json({ id: segment.id, deleted: true });
 }

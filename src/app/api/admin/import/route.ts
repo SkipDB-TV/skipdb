@@ -49,7 +49,6 @@
 import { json, apiError } from "@/lib/api";
 import { getActor } from "@/lib/actor";
 import { ensureTitle } from "@/lib/titles";
-import { recomputeResolved } from "@/lib/resolved";
 import { insertStaffSegment } from "@/lib/staff-submit";
 import { parseTimeToMs, roundTime } from "@/lib/time";
 import { config } from "@/lib/config";
@@ -136,13 +135,6 @@ export async function POST(req: Request) {
     titleCache.set(imdbId, t);
     return t;
   }
-
-  // Track which (imdbId, titleId, season, episode, segmentType) combos need
-  // recomputeResolved after all inserts.
-  const toResolve = new Map<
-    string,
-    { imdbId: string; titleId: number; season: number | null; episode: number | null; segmentType: SegmentTypeName }
-  >();
 
   type SegResult =
     | { type: string; id: number; start_ms: number; end_ms: number; duration_ms: number | null; status: "approved" }
@@ -238,14 +230,6 @@ export async function POST(req: Request) {
             status: "approved",
           });
 
-          const resolveKey = `${item.imdb_id}|${season}|${episode}|${segType}`;
-          toResolve.set(resolveKey, {
-            imdbId: item.imdb_id,
-            titleId: title.id,
-            season,
-            episode,
-            segmentType: segType,
-          });
         }
       } catch (err) {
         segResults.push({ type: segType, error: String(err) });
@@ -259,9 +243,6 @@ export async function POST(req: Request) {
       segments: segResults,
     });
   }
-
-  // Recompute resolved for every affected (episode, type) pair.
-  await Promise.all([...toResolve.values()].map((k) => recomputeResolved(k)));
 
   const submitted = results.flatMap((r) => r.segments).filter((s) => "id" in s).length;
   const skipped = results.flatMap((r) => r.segments).filter((s) => "skipped" in s).length;

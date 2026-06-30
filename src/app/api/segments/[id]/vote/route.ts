@@ -3,9 +3,7 @@ import { segments, votes, users } from "@/db/schema";
 import { json, apiError, preflight } from "@/lib/api";
 import { getActor } from "@/lib/actor";
 import { voteSchema } from "@/lib/validation";
-import { recomputeResolved } from "@/lib/resolved";
 import { and, eq, sql } from "drizzle-orm";
-import type { SegmentTypeName } from "@/lib/config";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -94,17 +92,6 @@ export async function POST(
       .update(users)
       .set({ reputation: Number(rep.total) })
       .where(eq(users.id, segment.submittedBy));
-  }
-
-  // Votes can change which segment wins, so refresh the resolved best.
-  if (segment.status === "approved") {
-    await recomputeResolved({
-      imdbId: segment.imdbId,
-      titleId: segment.titleId,
-      season: segment.season,
-      episode: segment.episode,
-      segmentType: segment.segmentType as SegmentTypeName,
-    });
   }
 
   return json({

@@ -1,0 +1,1 @@
+DROP TABLE "resolved_segments" CASCADE;
