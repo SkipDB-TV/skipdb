@@ -48,3 +48,15 @@ jobs:
             skipdb-dump.json
           make_latest: true
           prerelease: false
+
+      - name: Heartbeat
+        if: ${{ github.event_name == 'schedule' && env.EXPORT_HEARTBEAT_URL != '' }}
+        run: curl -fsSo /dev/null "$EXPORT_HEARTBEAT_URL"
+        env:
+          EXPORT_HEARTBEAT_URL: ${{ secrets.EXPORT_HEARTBEAT_URL }}
+
+      - name: Heartbeat (fail)
+        if: ${{ failure() && github.event_name == 'schedule' && env.EXPORT_HEARTBEAT_URL != '' }}
+        run: curl -fsSo /dev/null "$EXPORT_HEARTBEAT_URL/fail"
+        env:
+          EXPORT_HEARTBEAT_URL: ${{ secrets.EXPORT_HEARTBEAT_URL }}

@@ -25,3 +25,15 @@ jobs:
           IMPORT_CF_DATABASE_ID: ${{ secrets.IMPORT_CF_DATABASE_ID }}
           IMPORT_CF_API_TOKEN: ${{ secrets.IMPORT_CF_API_TOKEN }}
         run: pnpm run d1:import
+
+      - name: Heartbeat
+        if: ${{ github.event_name == 'workflow_run' && env.IMPORT_HEARTBEAT_URL != '' }}
+        run: curl -fsSo /dev/null "$IMPORT_HEARTBEAT_URL"
+        env:
+          IMPORT_HEARTBEAT_URL: ${{ secrets.IMPORT_HEARTBEAT_URL }}
+
+      - name: Heartbeat (fail)
+        if: ${{ failure() && github.event_name == 'workflow_run' && env.IMPORT_HEARTBEAT_URL != '' }}
+        run: curl -fsSo /dev/null "$IMPORT_HEARTBEAT_URL/fail"
+        env:
+          IMPORT_HEARTBEAT_URL: ${{ secrets.IMPORT_HEARTBEAT_URL }}
