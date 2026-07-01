@@ -35,6 +35,20 @@ export async function generateApiKey(userId: string): Promise<{
   return { key, prefix: keyPrefix };
 }
 
+/**
+ * Create a blank, login-less user (no email/password) and issue its API key.
+ * Used for anonymous submission: each generated key gets its own user row so
+ * write-rate-limits, the per-user overlap check, and reputation stay isolated
+ * per key-holder instead of being shared across every anonymous submitter.
+ */
+export async function generateAnonymousApiKey(): Promise<{
+  key: string;
+  prefix: string;
+}> {
+  const [user] = await db.insert(users).values({}).returning({ id: users.id });
+  return generateApiKey(user.id);
+}
+
 /** Reveal the plaintext of a user's active API key (decrypted). */
 export async function revealApiKey(userId: string): Promise<string | null> {
   const row = (

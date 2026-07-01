@@ -18,6 +18,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (READ_ONLY) return readOnlyError();
+  // Anonymous keys are rejected by default (voting requires a registered
+  // account — it feeds reputation and abuse resistance).
   const actor = await getActor(req);
   if (!actor) return apiError("Authentication required.", 401);
 

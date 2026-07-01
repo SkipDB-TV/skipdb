@@ -89,7 +89,7 @@ export async function GET(req: Request) {
 // --- Submit (auth: session or API key) ---
 export async function POST(req: Request) {
   if (READ_ONLY) return readOnlyError();
-  const actor = await getActor(req);
+  const actor = await getActor(req, { allowAnonymousKeys: true });
   if (!actor)
     return apiError(
       "Authentication required. Sign in or provide an API key.",

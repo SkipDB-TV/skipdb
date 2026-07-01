@@ -23,7 +23,6 @@ const data = await db
     episode: segments.episode,
     segment_type: segments.segmentType,
     status: segments.status,
-    // submitted_by: segments.submittedBy, // Temporarily disabled while reviewing security
     start_ms: segments.startMs,
     end_ms: segments.endMs,
     duration_ms: segments.durationMs,

@@ -22,7 +22,7 @@ function isStaff(role: string) {
 }
 
 async function loadAuthorized(req: Request, id: string) {
-  const actor = await getActor(req);
+  const actor = await getActor(req, { allowAnonymousKeys: true });
   if (!actor) return { error: apiError("Authentication required.", 401) };
   const segmentId = Number(id);
   if (!Number.isInteger(segmentId))

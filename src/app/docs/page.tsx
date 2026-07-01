@@ -46,13 +46,14 @@ export default function DocsPage() {
     <div className="container-page py-10">
       <h1 className="text-3xl font-bold text-white">API documentation</h1>
       <p className="mt-2 max-w-2xl text-slate-400">
-        Base URL:{" "}
-        <code className="mono text-slate-300">{API_URL}</code>.
+        Base URL: <code className="mono text-slate-300">{API_URL}</code>.
         Reading is open and rate-limited ({config.limits.readPerMinute}{" "}
         req/min). Writing requires a logged-in session or an API key (
         {config.limits.writePerMinute} req/min). All timestamps are in
         milliseconds (<span className="mono">_ms</span>). Data is licensed{" "}
-        <a href="/license" className="text-skip hover:underline">ODbL 1.0 + reciprocity</a>{" "}
+        <a href="/license" className="text-skip hover:underline">
+          ODbL 1.0 + reciprocity
+        </a>{" "}
         unless you have explicit permission.
       </p>
 
@@ -124,10 +125,16 @@ export default function DocsPage() {
             Submit a segment. Auth via{" "}
             <span className="mono">Authorization: Bearer skdb_…</span> or{" "}
             <span className="mono">X-API-Key</span> (or a session cookie). Times
-            use <span className="mono">*_ms</span> (milliseconds).
-            Submitting implies agreement to publish under{" "}
-            <a href="/license" className="text-skip hover:underline">ODbL 1.0 + reciprocity</a>{" "}
-            (see <a href="/terms" className="text-skip hover:underline">terms</a>).
+            use <span className="mono">*_ms</span> (milliseconds). Submitting
+            implies agreement to publish under{" "}
+            <a href="/license" className="text-skip hover:underline">
+              ODbL 1.0 + reciprocity
+            </a>{" "}
+            (see{" "}
+            <a href="/terms" className="text-skip hover:underline">
+              terms
+            </a>
+            ).
           </p>
           <Code>{`curl -X POST ${API_URL}/api/segments \\
   -H "Authorization: Bearer skdb_xxx" \\
@@ -169,7 +176,8 @@ export default function DocsPage() {
         <Endpoint method="GET" path="/api/dump">
           <p>
             The full open data dump of every approved segment — no user data.
-            Licensed ODbL 1.0 + reciprocity. This is the guarantee that the data stays free.
+            Licensed ODbL 1.0 + reciprocity. This is the guarantee that the data
+            stays free.
           </p>
         </Endpoint>
 
@@ -178,6 +186,24 @@ export default function DocsPage() {
             Generate or reset your API key (returns the plaintext once).{" "}
             <span className="mono">GET</span> returns the active key prefix;{" "}
             <span className="mono">DELETE</span> revokes it. Session only.
+          </p>
+        </Endpoint>
+
+        <Endpoint method="POST" path="/api/keys/anonymous">
+          <p>
+            Get an API key without signing up. Creates a blank, login-less user
+            behind the scenes and returns its key (plaintext, once) —
+            there&apos;s no account to recover it from, so save it immediately.
+            Rate-limited per IP ({config.limits.anonymousKeysPerHour}/hour).{" "}
+            <span className="mono">DELETE</span> with the same key (via{" "}
+            <span className="mono">Authorization</span> or{" "}
+            <span className="mono">X-API-Key</span>) revokes it.
+          </p>
+          <p className="mt-2">
+            Anonymous keys can submit, edit, and delete their own segments the
+            same as a full account — the one thing they can&apos;t do is vote on
+            other people&apos;s submissions, since voting feeds reputation and
+            abuse resistance that depend on a real, ownable identity.
           </p>
         </Endpoint>
       </div>

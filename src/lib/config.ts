@@ -58,6 +58,10 @@ export const config = {
     // (TMDB/TVDB), to protect the shared server API key from abuse.
     metadataPerMinute: 30,
     rateWindowMs: 60_000,
+    // Per-IP cap on minting anonymous (no-signup) users + keys, since each one
+    // gets its own write-rate-limit bucket and reputation — without this, one
+    // IP could farm throwaway identities to dodge writePerMinute.
+    anonymousKeysPerHour: 5,
   },
 
   segmentTypes: ["intro", "recap", "outro", "preview"] as const,

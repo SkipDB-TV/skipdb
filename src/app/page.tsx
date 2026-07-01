@@ -92,12 +92,12 @@ export default async function HomePage() {
             body: "Code is AGPL-3.0, data is ODbL 1.0 + reciprocity. A public dump means SkipDB can never be made proprietary or shut down with the data held hostage.",
           },
           {
-            title: "Voted, not just submitted",
-            body: "Timestamps are scored by community votes and cross-checked against the show's established pattern before going live. Outliers go to manual review — so clients get reliable data, not just whatever was submitted first.",
-          },
-          {
             title: "Stream-aware matching",
             body: "Optional per-submission stream duration lets SkipDB compare versions and smart-shift timestamps when a stream has an extra logo or scene at the start.",
+          },
+          {
+            title: "No account needed to submit",
+            body: "Generate an API key without signing up to submit, edit, or delete your own timestamps — no email, no password. Submissions are still linked to avoid abuse, allowing for bulk removal.",
           },
         ].map((f) => (
           <div key={f.title} className="card p-6">
