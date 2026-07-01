@@ -3,7 +3,7 @@ import { segments, votes, users } from "@/db/schema";
 import { json, apiError, preflight } from "@/lib/api";
 import { getActor } from "@/lib/actor";
 import { voteSchema } from "@/lib/validation";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -44,6 +44,8 @@ export async function POST(
     await db.select().from(segments).where(eq(segments.id, segmentId))
   )[0];
   if (!segment) return apiError("Segment not found", 404);
+  if (segment.status === "disabled")
+    return apiError("This segment has been disabled", 403);
 
   const userId = actor.user.id;
 
@@ -89,7 +91,12 @@ export async function POST(
         total: sql<number>`coalesce(sum(${segments.score}), 0)`,
       })
       .from(segments)
-      .where(eq(segments.submittedBy, segment.submittedBy));
+      .where(
+        and(
+          eq(segments.submittedBy, segment.submittedBy),
+          ne(segments.status, "disabled"),
+        ),
+      );
     await db
       .update(users)
       .set({ reputation: Number(rep.total) })

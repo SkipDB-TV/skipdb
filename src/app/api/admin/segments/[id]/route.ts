@@ -38,6 +38,11 @@ export async function POST(
     await db.select().from(segments).where(eq(segments.id, segmentId))
   )[0];
   if (!segment) return apiError("Segment not found", 404);
+  if (segment.status === "disabled")
+    return apiError(
+      "This segment belongs to a disabled user — re-enable the user instead of approving/rejecting directly.",
+      409,
+    );
 
   const newStatus = action === "approve" ? "approved" : "rejected";
   await db

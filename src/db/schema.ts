@@ -30,6 +30,11 @@ export const segmentStatus = pgEnum("segment_status", [
   "pending",
   "approved",
   "rejected",
+  // Hidden by an admin disabling the submitting user's account — orthogonal
+  // to the moderation outcome above it, which is preserved in moderationLog
+  // (`detail.previousStatus` on the "disable" entry) and restored verbatim
+  // when the account is re-enabled.
+  "disabled",
 ]);
 export const submissionSource = pgEnum("submission_source", ["web", "api"]);
 
@@ -50,6 +55,9 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   role: userRole("role").notNull().default("user"),
   reputation: integer("reputation").notNull().default(0),
+  // Soft-ban: blocks auth (session + API key) without deleting the account or
+  // its history. Set together with cascading `segments.disabled` by an admin.
+  disabled: boolean("disabled").notNull().default(false),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
@@ -224,6 +232,7 @@ export const segments = pgTable(
     ),
     byTitle: index("segments_title_idx").on(table.titleId),
     byStatus: index("segments_status_idx").on(table.status),
+    bySubmitter: index("segments_submitted_by_idx").on(table.submittedBy),
   }),
 );
 

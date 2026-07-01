@@ -67,6 +67,9 @@ export default async function AdminPage() {
           <Link href="/admin/bulk" className="btn-ghost text-sm">
             Bulk submit
           </Link>
+          <Link href="/admin/users" className="btn-ghost text-sm">
+            Users
+          </Link>
         </div>
       </div>
       <p className="mt-2 text-sm text-slate-400">

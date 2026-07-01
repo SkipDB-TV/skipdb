@@ -58,6 +58,7 @@ declare module "next-auth" {
       id: string;
       role: "user" | "moderator" | "admin";
       reputation: number;
+      disabled: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -207,6 +208,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = (user as { role?: typeof session.user.role }).role ?? "user";
         session.user.reputation =
           (user as { reputation?: number }).reputation ?? 0;
+        session.user.disabled =
+          (user as { disabled?: boolean }).disabled ?? false;
       }
       return session;
     },

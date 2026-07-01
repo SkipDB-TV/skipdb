@@ -57,7 +57,8 @@ export async function loadPanelSegments(opts: {
     votesUp: r.votesUp,
     votesDown: r.votesDown,
     score: r.score,
-    status: r.status,
+    // The WHERE clause above only ever matches "approved"/"pending".
+    status: r.status as PanelSegment["status"],
     yourVote: voteMap.get(r.id) ?? 0,
     mine: opts.userId != null && r.submittedBy === opts.userId,
     createdAt: r.createdAt.toISOString(),

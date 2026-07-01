@@ -22,7 +22,7 @@ interface DumpSegment {
   season: number | null;
   episode: number | null;
   segment_type: "intro" | "recap" | "outro" | "preview";
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "disabled";
   submitted_by: string | null;
   start_ms: number;
   end_ms: number;

@@ -36,9 +36,14 @@ export async function SiteNav() {
             About
           </Link>
           {isStaff && (
-            <Link href="/admin" className="text-skip hover:text-skip-bright">
-              Review
-            </Link>
+            <>
+              <Link href="/admin" className="text-skip hover:text-skip-bright">
+                Review
+              </Link>
+              <Link href="/admin/users" className="text-skip hover:text-skip-bright">
+                Users
+              </Link>
+            </>
           )}
         </nav>
         <div className="flex items-center gap-3">

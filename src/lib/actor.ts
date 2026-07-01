@@ -20,6 +20,9 @@ export type Actor =
  * Anonymous (login-less) API keys are rejected by default — an endpoint must
  * explicitly pass `allowAnonymousKeys: true` to accept them. This keeps new
  * write endpoints registered-only unless someone deliberately opts in.
+ *
+ * Disabled users are always rejected (as if unauthenticated), regardless of
+ * `allowAnonymousKeys` — a soft-banned account can't act via session or key.
  */
 export async function getActor(
   req: Request,
@@ -33,13 +36,14 @@ export async function getActor(
 
   if (headerKey) {
     const user = await userForApiKey(headerKey);
-    if (!user) return null;
+    if (!user || user.disabled) return null;
     if (!user.email && !allowAnonymousKeys) return null;
     return { user, via: "api-key" };
   }
 
   const session = await auth();
   if (session?.user?.id) {
+    if (session.user.disabled) return null;
     return {
       user: {
         id: session.user.id,
