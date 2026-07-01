@@ -21,12 +21,13 @@
     "dev:keys": "tsx scripts/make-test-keys.ts",
     "db:export": "tsx scripts/export-dump.ts",
     "db:import": "tsx scripts/import-dump.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
     "@vercel/analytics": "^2.0.1",
-    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.9",
     "next-auth": "5.0.0-beta.31",
@@ -43,13 +44,16 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/supertest": "^7.2.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.9",
     "postcss": "^8.5.6",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.3.1",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "packageManager": "pnpm@11.9.0"
 }

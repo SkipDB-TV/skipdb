@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../lib/load-env";
 import { db } from "./index";
 import { titles, episodes, segments, users } from "./schema";
 import { eq } from "drizzle-orm";

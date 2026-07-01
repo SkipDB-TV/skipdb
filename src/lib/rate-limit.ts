@@ -28,6 +28,14 @@ export function rateLimit(
   limit: number,
   windowMs: number = config.limits.rateWindowMs,
 ): RateLimitResult {
+  // The integration test server hits these endpoints far more densely than
+  // any real client in a 60s window (every test file shares one server/IP
+  // bucket), which isn't the abuse pattern rate limiting exists to catch.
+  // SKIPDB_TEST_SERVER is only ever set by tests/global-setup.ts.
+  const effectiveLimit = process.env.SKIPDB_TEST_SERVER
+    ? limit * 1000
+    : limit;
+
   const now = Date.now();
   const existing = buckets.get(key);
 
@@ -40,7 +48,7 @@ export function rateLimit(
   existing.count += 1;
   const remaining = Math.max(0, limit - existing.count);
   return {
-    ok: existing.count <= limit,
+    ok: existing.count <= effectiveLimit,
     limit,
     remaining,
     resetAt: existing.resetAt,
