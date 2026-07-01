@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./src/lib/load-env";
 import { defineConfig } from "drizzle-kit";
 
 const url =

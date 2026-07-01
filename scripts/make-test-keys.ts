@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../src/lib/load-env";
 import { createHash, randomBytes } from "node:crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";

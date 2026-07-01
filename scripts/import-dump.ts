@@ -10,7 +10,7 @@
  * Requires DATABASE_URL in env (or .env file).
  */
 
-import "dotenv/config";
+import "../src/lib/load-env";
 import { readFileSync } from "fs";
 import { db } from "../src/db";
 import { titles, segments, users } from "../src/db/schema";
