@@ -7,6 +7,7 @@ import { editSchema, validateSegmentBounds } from "@/lib/validation";
 import { config } from "@/lib/config";
 import { parseTimeToMs, roundTime } from "@/lib/time";
 import { reviewSubmission } from "@/lib/review";
+import { findOverlappingOwnSegment } from "@/lib/segments";
 import type { SegmentTypeName } from "@/lib/config";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 
@@ -95,6 +96,32 @@ export async function PATCH(
 
   const boundsError = validateSegmentBounds({ startMs, endMs, durationMs, segmentType: type });
   if (boundsError) return apiError(boundsError, 422);
+
+  // The edited range can't overlap another of this user's own submissions
+  // (any type) for the same episode + stream length. Skipped for orphaned
+  // segments (submittedBy null after account deletion) — nothing to compare.
+  if (segment.submittedBy) {
+    const overlap = await findOverlappingOwnSegment({
+      imdbId: segment.imdbId,
+      season: segment.season,
+      episode: segment.episode,
+      durationMs,
+      submittedBy: segment.submittedBy,
+      startMs,
+      endMs,
+      excludeSegmentId: segment.id,
+    });
+    if (overlap) {
+      return apiError(
+        `This overlaps your existing ${overlap.segmentType} submission (${overlap.startMs}-${overlap.endMs}ms) for this episode.`,
+        409,
+        {
+          conflicting_segment_id: overlap.id,
+          conflicting_segment_type: overlap.segmentType,
+        },
+      );
+    }
+  }
 
   const decision = await reviewSubmission(
     {

@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { segments, moderationLog } from "@/db/schema";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { json, apiError, preflight, LICENSE_NOTICE } from "@/lib/api";
-import { getBestByType } from "@/lib/segments";
+import { getBestByType, findOverlappingOwnSegment } from "@/lib/segments";
 import type { AdjustMode } from "@/lib/duration";
 import { getIntroLengthEstimate } from "@/lib/estimate";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
@@ -175,6 +175,32 @@ export async function POST(req: Request) {
       ),
     )
     .limit(1);
+
+  // The same user can't have two overlapping time ranges (of any segment
+  // type) for the same episode + stream length — e.g. an intro at 20-30s
+  // and a preview at 25-35s on the same 47-minute cut. `recentOwn` (if any)
+  // is about to be edited in place, so it isn't a conflict with itself.
+  const overlap = await findOverlappingOwnSegment({
+    imdbId: input.imdbId,
+    season: input.season,
+    episode: input.episode,
+    durationMs: input.durationMs,
+    submittedBy: actor.user.id,
+    startMs: input.startMs,
+    endMs: input.endMs,
+    excludeSegmentId: recentOwn?.id,
+  });
+
+  if (overlap) {
+    return apiError(
+      `This overlaps your existing ${overlap.segmentType} submission (${overlap.startMs}-${overlap.endMs}ms) for this episode. Edit or delete that submission instead of creating an overlapping one.`,
+      409,
+      {
+        conflicting_segment_id: overlap.id,
+        conflicting_segment_type: overlap.segmentType,
+      },
+    );
+  }
 
   if (recentOwn) {
     const decision = await reviewSubmission(

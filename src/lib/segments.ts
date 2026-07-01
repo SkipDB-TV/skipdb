@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { segments } from "@/db/schema";
-import { and, eq, isNull, desc } from "drizzle-orm";
+import { and, eq, isNull, ne, lt, gt, desc } from "drizzle-orm";
 import { adjustForDuration, matchRank } from "./duration";
 import type { DurationAdjustment, AdjustMode } from "./duration";
 import { publicTimes } from "./time";
@@ -40,6 +40,48 @@ export async function getEpisodeSegments(q: {
     .from(segments)
     .where(and(...where))
     .orderBy(desc(segments.score), desc(segments.votesUp));
+}
+
+/**
+ * Find another non-rejected segment (any type) that this same user already
+ * submitted for the same episode + stream length ("duration") whose time
+ * range overlaps the candidate range. Different `durationMs` values mean
+ * different cuts/releases of the episode, so those are never compared —
+ * only submissions against the same length of show can genuinely overlap.
+ * The `0,0` "confirmed absent" sentinel never overlaps anything.
+ */
+export async function findOverlappingOwnSegment(q: {
+  imdbId: string;
+  season: number | null;
+  episode: number | null;
+  durationMs: number | null;
+  submittedBy: string;
+  startMs: number;
+  endMs: number;
+  excludeSegmentId?: number;
+}): Promise<Segment | null> {
+  if (q.startMs === 0 && q.endMs === 0) return null;
+
+  const where = [
+    eq(segments.imdbId, q.imdbId),
+    eq(segments.submittedBy, q.submittedBy),
+    q.season == null ? isNull(segments.season) : eq(segments.season, q.season),
+    q.episode == null ? isNull(segments.episode) : eq(segments.episode, q.episode),
+    q.durationMs == null
+      ? isNull(segments.durationMs)
+      : eq(segments.durationMs, q.durationMs),
+    ne(segments.status, "rejected"),
+    lt(segments.startMs, q.endMs),
+    gt(segments.endMs, q.startMs),
+  ];
+  if (q.excludeSegmentId != null) where.push(ne(segments.id, q.excludeSegmentId));
+
+  const [row] = await db
+    .select()
+    .from(segments)
+    .where(and(...where))
+    .limit(1);
+  return row ?? null;
 }
 
 export function formatPublic(
