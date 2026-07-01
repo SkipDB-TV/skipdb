@@ -117,7 +117,7 @@ export default async function EpisodePage({
   return (
     <div className="container-page py-10">
       <div className="text-sm text-slate-500">
-        <Link href={`/title/${id}`} className="hover:text-white">
+        <Link href={`/title/${id}?season=${season}`} className="hover:text-white">
           {title.name}
         </Link>{" "}
         <span className="mx-1">/</span>

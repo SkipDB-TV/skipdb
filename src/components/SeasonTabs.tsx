@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SEGMENT_ORDER, SEGMENT_META } from "@/lib/segment-types";
 import type { SegmentTypeName } from "@/lib/config";
 import { ApiLink } from "./ApiLink";
@@ -15,7 +15,17 @@ export function SeasonTabs({
   seasons: number[];
   episodes: EpisodeCoverage[];
 }) {
-  const [activeSeason, setActiveSeason] = useState(seasons[0] ?? 1);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const seasonParam = Number(searchParams.get("season"));
+  const activeSeason =
+    seasonParam && seasons.includes(seasonParam) ? seasonParam : (seasons[0] ?? 1);
+
+  function setSeason(season: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("season", String(season));
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
 
   // Group episodes by season once.
   const bySeasonMap = new Map<number, EpisodeCoverage[]>();
@@ -49,7 +59,7 @@ export function SeasonTabs({
           return (
             <button
               key={season}
-              onClick={() => setActiveSeason(season)}
+              onClick={() => setSeason(season)}
               className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
                 isActive
                   ? "bg-skip text-midnight-950"

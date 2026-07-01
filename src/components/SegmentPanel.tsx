@@ -481,9 +481,12 @@ function SegmentForm({
       } else {
         setMsg({ ok: true, text: data.message ?? "Saved." });
         if (mode === "create") {
-          setStart("");
+          // Advance to the next segment type; keep duration so the
+          // user can quickly submit the same times for a different type.
+          const nextIdx = SEGMENT_ORDER.indexOf(type) + 1;
+          if (nextIdx < SEGMENT_ORDER.length) setType(SEGMENT_ORDER[nextIdx]);
           setEnd("");
-          setDuration("");
+          setStart(end);
         }
       }
     } finally {

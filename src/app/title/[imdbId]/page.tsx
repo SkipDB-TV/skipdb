@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getTitleOverview } from "@/lib/coverage";
 import { loadPanelSegments } from "@/lib/panel";
@@ -214,11 +215,13 @@ function SeriesBody({
   return (
     <div className="space-y-8">
       <CoverageSummary episodes={overview.episodes} />
-      <SeasonTabs
-        imdbId={imdbId}
-        seasons={seasons}
-        episodes={overview.episodes}
-      />
+      <Suspense>
+        <SeasonTabs
+          imdbId={imdbId}
+          seasons={seasons}
+          episodes={overview.episodes}
+        />
+      </Suspense>
     </div>
   );
 }
