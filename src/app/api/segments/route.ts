@@ -49,12 +49,24 @@ export async function GET(req: Request) {
   let durationMs: number | null = null;
   if (durationRaw != null) {
     const v = Math.round(Number(durationRaw));
-    if (Number.isNaN(v)) return apiError("duration must be a number in seconds", 400);
+    if (!Number.isFinite(v) || v < 0)
+      return apiError("duration must be a non-negative number in seconds", 400);
     durationMs = v * 1000;
   }
 
-  const season = seasonRaw != null ? Number(seasonRaw) : null;
-  const episode = episodeRaw != null ? Number(episodeRaw) : null;
+  // Reject NaN / out-of-range values here — they'd otherwise reach the DB as
+  // invalid integer parameters and surface as a 500.
+  const parseIndex = (raw: string | null): number | null => {
+    if (raw == null) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) && n >= 0 && n <= 100_000 ? n : NaN;
+  };
+  const season = parseIndex(seasonRaw);
+  if (Number.isNaN(season))
+    return apiError("season must be a non-negative integer", 400);
+  const episode = parseIndex(episodeRaw);
+  if (Number.isNaN(episode))
+    return apiError("episode must be a non-negative integer", 400);
   const types = typeRaw ? ([typeRaw] as (typeof config.segmentTypes)[number][]) : [...config.segmentTypes];
 
   const [segmentsByType, introLengthEstimateMs] = await Promise.all([

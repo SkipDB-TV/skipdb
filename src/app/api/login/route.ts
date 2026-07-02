@@ -5,11 +5,15 @@ import { json, apiError } from "@/lib/api";
 import { loginSchema } from "@/lib/validation";
 import { verifyPassword } from "@/lib/password";
 import { createUserSession } from "@/lib/session";
-import { isAdminEmail } from "@/lib/admin-emails";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 
 export const runtime = "nodejs";
+
+// Well-formed scrypt hash that matches no password. Verified against when the
+// email is unknown (or has no password) so the response takes the same time
+// either way — otherwise timing would reveal which emails are registered.
+const DUMMY_HASH = `scrypt$${"0".repeat(32)}$${"0".repeat(128)}`;
 
 export async function POST(req: Request) {
   if (READ_ONLY) return readOnlyError();
@@ -27,18 +31,11 @@ export async function POST(req: Request) {
   if (!parsed.success) return apiError("Invalid email or password", 401);
   const { email, password } = parsed.data;
 
-  const user = (
-    await db.select().from(users).where(eq(users.email, email))
-  )[0];
+  const user = (await db.select().from(users).where(eq(users.email, email)))[0];
 
   // Generic error to avoid leaking which emails are registered.
-  const ok = user && (await verifyPassword(password, user.passwordHash));
+  const ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !ok) return apiError("Invalid email or password", 401);
-
-  // Keep admin promotion in sync for configured emails.
-  if (isAdminEmail(email) && user.role !== "admin") {
-    await db.update(users).set({ role: "admin" }).where(eq(users.id, user.id));
-  }
 
   await createUserSession(user.id);
   return json({ ok: true, user: { email: user.email } });

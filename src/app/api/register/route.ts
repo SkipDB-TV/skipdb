@@ -5,7 +5,6 @@ import { json, apiError } from "@/lib/api";
 import { registerSchema } from "@/lib/validation";
 import { hashPassword } from "@/lib/password";
 import { createUserSession } from "@/lib/session";
-import { isAdminEmail } from "@/lib/admin-emails";
 import { hasMxRecord } from "@/lib/email-validation";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
@@ -33,7 +32,10 @@ export async function POST(req: Request) {
   const { email, password, name } = parsed.data;
 
   if (!(await hasMxRecord(email))) {
-    return apiError("That email address doesn't appear to be valid. Please check it and try again.", 422);
+    return apiError(
+      "That email address doesn't appear to be valid. Please check it and try again.",
+      422,
+    );
   }
 
   const existing = (
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
       name: name ?? email.split("@")[0],
       passwordHash,
       emailVerified: null,
-      role: isAdminEmail(email) ? "admin" : "user",
+      role: "user",
     })
     .returning();
 

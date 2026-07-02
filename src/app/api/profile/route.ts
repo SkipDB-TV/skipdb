@@ -52,7 +52,10 @@ export async function POST(req: Request) {
   const emailChanged = current?.email?.toLowerCase() !== email;
 
   if (emailChanged && !(await hasMxRecord(email))) {
-    return apiError("That email address doesn't appear to be valid. Please check it and try again.", 422);
+    return apiError(
+      "That email address doesn't appear to be valid. Please check it and try again.",
+      422,
+    );
   }
 
   await db

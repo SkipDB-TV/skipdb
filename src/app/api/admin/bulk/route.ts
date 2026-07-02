@@ -17,8 +17,8 @@ const bulkSchema = z.object({
   episodes: z
     .array(
       z.object({
-        season: z.number().int().min(0),
-        episode: z.number().int().min(0),
+        season: z.number().int().min(0).max(1_000),
+        episode: z.number().int().min(0).max(100_000),
         start_ms: z.number(),
         end_ms: z.number(),
         duration_ms: z.number().optional(),
@@ -76,12 +76,27 @@ export async function POST(req: Request) {
         submittedById: staff.id,
       });
       if (outcome.kind === "skipped") {
-        results.push({ season: ep.season, episode: ep.episode, skipped: true, existing_id: outcome.existingId, status: "exact_match" });
+        results.push({
+          season: ep.season,
+          episode: ep.episode,
+          skipped: true,
+          existing_id: outcome.existingId,
+          status: "exact_match",
+        });
       } else {
-        results.push({ season: ep.season, episode: ep.episode, id: outcome.id, status: "approved" });
+        results.push({
+          season: ep.season,
+          episode: ep.episode,
+          id: outcome.id,
+          status: "approved",
+        });
       }
     } catch (err) {
-      results.push({ season: ep.season, episode: ep.episode, error: String(err) });
+      results.push({
+        season: ep.season,
+        episode: ep.episode,
+        error: String(err),
+      });
     }
   }
 

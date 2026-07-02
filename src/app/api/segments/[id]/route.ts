@@ -3,8 +3,7 @@ import { segments, moderationLog } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { json, apiError, preflight } from "@/lib/api";
 import { getActor } from "@/lib/actor";
-import { editSchema, validateSegmentBounds } from "@/lib/validation";
-import { config } from "@/lib/config";
+import { editSchema, snapOutroEnd, validateSegmentBounds } from "@/lib/validation";
 import { parseTimeToMs, roundTime } from "@/lib/time";
 import { reviewSubmission } from "@/lib/review";
 import { findOverlappingOwnSegment } from "@/lib/segments";
@@ -86,12 +85,8 @@ export async function PATCH(
     e.end_ms ?? segment.endMs,
   );
   // Snap outro end to duration when within the threshold.
-  if (
-    type === "outro" &&
-    durationMs != null &&
-    Math.abs(endMs - durationMs) <= config.limits.outroEndThresholdMs
-  ) {
-    endMs = durationMs;
+  if (type === "outro") {
+    endMs = snapOutroEnd(endMs, durationMs);
   }
 
   const boundsError = validateSegmentBounds({ startMs, endMs, durationMs, segmentType: type });

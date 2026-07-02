@@ -11,6 +11,17 @@ export const imdbIdSchema = z
 
 export const segmentTypeSchema = z.enum(config.segmentTypes);
 
+/**
+ * Outros that end within the threshold of the stream duration are treated as
+ * running "to the end" — snap the end to the duration exactly.
+ */
+export function snapOutroEnd(endMs: number, durationMs: number | null): number {
+  return durationMs != null &&
+    Math.abs(endMs - durationMs) <= config.limits.outroEndThresholdMs
+    ? durationMs
+    : endMs;
+}
+
 /** A time field that accepts ms (number) or seconds / clock string. */
 const flexibleTime = z.union([z.number(), z.string()]);
 
@@ -22,8 +33,8 @@ export const submitSchema = z
   .object({
     imdb_id: imdbIdSchema,
     segment_type: segmentTypeSchema,
-    season: z.coerce.number().int().min(0).optional(),
-    episode: z.coerce.number().int().min(0).optional(),
+    season: z.coerce.number().int().min(0).max(1_000).optional(),
+    episode: z.coerce.number().int().min(0).max(100_000).optional(),
 
     start_ms: z.number().optional(),
     end_ms: z.number().optional(),
@@ -62,11 +73,8 @@ export const submitSchema = z
             "outro submissions without an end time require duration_ms so we know where the stream ends",
           path: ["end_ms"],
         });
-      } else if (
-        durationMs != null &&
-        Math.abs(endMs - durationMs) <= config.limits.outroEndThresholdMs
-      ) {
-        endMs = durationMs;
+      } else {
+        endMs = snapOutroEnd(endMs, durationMs);
       }
     } else {
       endMs = submittedEndMs;

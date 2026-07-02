@@ -26,10 +26,7 @@ export async function generateApiKey(userId: string): Promise<{
   const keyPrefix = key.slice(0, PREFIX.length + 4); // e.g. skdb_a1b2
 
   // Revoke existing active keys (one active key per user).
-  await db
-    .update(apiKeys)
-    .set({ revoked: true })
-    .where(and(eq(apiKeys.userId, userId), eq(apiKeys.revoked, false)));
+  await revokeApiKeys(userId);
 
   await db.insert(apiKeys).values({ userId, keyHash, keyCipher, keyPrefix });
   return { key, prefix: keyPrefix };

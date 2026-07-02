@@ -50,6 +50,7 @@ import { json, apiError } from "@/lib/api";
 import { getActor } from "@/lib/actor";
 import { ensureTitle } from "@/lib/titles";
 import { insertStaffSegment } from "@/lib/staff-submit";
+import { snapOutroEnd } from "@/lib/validation";
 import { parseTimeToMs, roundTime } from "@/lib/time";
 import { config } from "@/lib/config";
 import { z } from "zod";
@@ -79,8 +80,8 @@ const episodeInputSchema = z.object({
     .regex(/^tt\d{6,10}$/i, "Must be a valid IMDb id, e.g. tt0903747")
     .transform((s) => s.toLowerCase()),
   // season/episode are optional so movies can be imported too (omit both).
-  season: z.coerce.number().int().min(0).optional(),
-  episode: z.coerce.number().int().min(0).optional(),
+  season: z.coerce.number().int().min(0).max(1_000).optional(),
+  episode: z.coerce.number().int().min(0).max(100_000).optional(),
   duration: flexTime.optional(),
   duration_ms: z.number().optional(),
   segments: z.array(segmentInputSchema).min(1).max(50),
@@ -92,7 +93,10 @@ const importSchema = z.array(episodeInputSchema).min(1).max(1000);
 // Time helpers
 // ---------------------------------------------------------------------------
 
-function resolveMs(ms?: number, flex?: z.infer<typeof flexTime>): number | null {
+function resolveMs(
+  ms?: number,
+  flex?: z.infer<typeof flexTime>,
+): number | null {
   if (ms != null) return ms;
   if (flex != null) return parseTimeToMs(flex);
   return null;
@@ -137,7 +141,14 @@ export async function POST(req: Request) {
   }
 
   type SegResult =
-    | { type: string; id: number; start_ms: number; end_ms: number; duration_ms: number | null; status: "approved" }
+    | {
+        type: string;
+        id: number;
+        start_ms: number;
+        end_ms: number;
+        duration_ms: number | null;
+        status: "approved";
+      }
     | { type: string; skipped: true; existing_id: number; reason: string }
     | { type: string; error: string };
 
@@ -163,7 +174,8 @@ export async function POST(req: Request) {
 
       const rawStart = resolveMs(seg.start_ms, seg.start);
       const rawEnd = resolveMs(seg.end_ms, seg.end);
-      const segDurationMs = resolveMs(seg.duration_ms, seg.duration) ?? epDurationMs;
+      const segDurationMs =
+        resolveMs(seg.duration_ms, seg.duration) ?? epDurationMs;
 
       if (rawStart == null) {
         segResults.push({ type: segType, error: "start is required" });
@@ -185,13 +197,10 @@ export async function POST(req: Request) {
           continue;
         }
         // Snap to end of stream when within threshold.
-        if (
-          segDurationMs != null &&
-          Math.abs(endMs - roundTime(segDurationMs)) <=
-            config.limits.outroEndThresholdMs
-        ) {
-          endMs = roundTime(segDurationMs);
-        }
+        endMs = snapOutroEnd(
+          endMs,
+          segDurationMs != null ? roundTime(segDurationMs) : null,
+        );
       } else if (endMs == null) {
         segResults.push({
           type: segType,
@@ -218,7 +227,8 @@ export async function POST(req: Request) {
             type: segType,
             skipped: true,
             existing_id: outcome.existingId,
-            reason: "Identical approved segment already exists — vote on it instead",
+            reason:
+              "Identical approved segment already exists — vote on it instead",
           });
         } else {
           segResults.push({
@@ -229,7 +239,6 @@ export async function POST(req: Request) {
             duration_ms: outcome.durationMs,
             status: "approved",
           });
-
         }
       } catch (err) {
         segResults.push({ type: segType, error: String(err) });
@@ -244,9 +253,15 @@ export async function POST(req: Request) {
     });
   }
 
-  const submitted = results.flatMap((r) => r.segments).filter((s) => "id" in s).length;
-  const skipped = results.flatMap((r) => r.segments).filter((s) => "skipped" in s).length;
-  const failed = results.flatMap((r) => r.segments).filter((s) => "error" in s).length;
+  const submitted = results
+    .flatMap((r) => r.segments)
+    .filter((s) => "id" in s).length;
+  const skipped = results
+    .flatMap((r) => r.segments)
+    .filter((s) => "skipped" in s).length;
+  const failed = results
+    .flatMap((r) => r.segments)
+    .filter((s) => "error" in s).length;
 
   return json({ submitted, skipped, failed, results });
 }

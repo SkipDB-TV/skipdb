@@ -91,8 +91,6 @@ Without OAuth/SMTP/TMDB keys the app still runs: **email + password sign-in work
 
 - artwork). OAuth and magic-link sign-in light up automatically when their env vars are set.
 
-To make yourself an admin, set `ADMIN_EMAILS=you@example.com` in `.env` before signing in.
-
 ### Testing the write API locally (no OAuth needed)
 
 To exercise submit/vote endpoints without configuring OAuth or SMTP, mint API

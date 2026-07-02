@@ -8,7 +8,6 @@ import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import type { Provider } from "next-auth/providers";
 import { db } from "@/db";
 import { users, accounts, sessions, verificationTokens } from "@/db/schema";
-import { isAdminEmail } from "./admin-emails";
 import { hasMxRecord } from "./email-validation";
 import { rateLimit } from "./rate-limit";
 import { eq } from "drizzle-orm";
@@ -36,10 +35,20 @@ function parseSmtpUrl(server: string): SMTPTransport.Options {
     const creds = rest.slice(0, atIdx);
     hostPart = rest.slice(atIdx + 1);
     const colonIdx = creds.indexOf(":");
-    const tryDecode = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
-    auth = colonIdx !== -1
-      ? { user: tryDecode(creds.slice(0, colonIdx)), pass: tryDecode(creds.slice(colonIdx + 1)) }
-      : { user: tryDecode(creds), pass: "" };
+    const tryDecode = (s: string) => {
+      try {
+        return decodeURIComponent(s);
+      } catch {
+        return s;
+      }
+    };
+    auth =
+      colonIdx !== -1
+        ? {
+            user: tryDecode(creds.slice(0, colonIdx)),
+            pass: tryDecode(creds.slice(colonIdx + 1)),
+          }
+        : { user: tryDecode(creds), pass: "" };
   } else {
     hostPart = rest;
   }
@@ -95,7 +104,11 @@ function buildProviders(): Provider[] {
           }
 
           // Per-email rate limit: 3 magic-link requests per hour.
-          const rl = rateLimit(`magic-link:${email.toLowerCase()}`, 3, 60 * 60_000);
+          const rl = rateLimit(
+            `magic-link:${email.toLowerCase()}`,
+            3,
+            60 * 60_000,
+          );
           if (!rl.ok) {
             throw new Error(
               "Too many sign-in requests for this email. Please wait before trying again.",
@@ -205,24 +218,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = user.id;
         // these come from our extended users table via the adapter
-        session.user.role = (user as { role?: typeof session.user.role }).role ?? "user";
+        session.user.role =
+          (user as { role?: typeof session.user.role }).role ?? "user";
         session.user.reputation =
           (user as { reputation?: number }).reputation ?? 0;
         session.user.disabled =
           (user as { disabled?: boolean }).disabled ?? false;
       }
       return session;
-    },
-  },
-  events: {
-    async signIn({ user }) {
-      // First-run convenience: promote configured emails to admin.
-      if (user.email && isAdminEmail(user.email) && user.id) {
-        await db
-          .update(users)
-          .set({ role: "admin" })
-          .where(eq(users.id, user.id));
-      }
     },
   },
 });

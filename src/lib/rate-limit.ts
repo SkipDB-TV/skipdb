@@ -12,6 +12,7 @@ interface Counter {
 
 const globalForRl = globalThis as unknown as {
   rlBuckets?: Map<string, Counter>;
+  rlCleanup?: ReturnType<typeof setInterval>;
 };
 const buckets = globalForRl.rlBuckets ?? new Map<string, Counter>();
 globalForRl.rlBuckets = buckets;
@@ -74,12 +75,14 @@ export function clientIp(req: Request): string {
   );
 }
 
-// Periodically evict expired buckets so the map doesn't grow unbounded.
-if (!globalForRl.rlBuckets || buckets.size === 0) {
+// Periodically evict expired buckets so the map doesn't grow unbounded. Kept
+// on globalThis so dev hot-reloads reuse one interval instead of stacking them.
+if (!globalForRl.rlCleanup) {
   const interval = setInterval(() => {
     const now = Date.now();
     for (const [k, v] of buckets) if (v.resetAt <= now) buckets.delete(k);
   }, 60_000);
   // don't keep the process alive just for cleanup
   if (typeof interval.unref === "function") interval.unref();
+  globalForRl.rlCleanup = interval;
 }
