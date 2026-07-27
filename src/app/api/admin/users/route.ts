@@ -11,7 +11,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const page = Number(url.searchParams.get("page")) || 1;
   const q = url.searchParams.get("q") ?? undefined;
+  const includeDisabled = url.searchParams.get("showDisabled") === "1";
 
-  const result = await listUsers({ page, q });
+  const result = await listUsers({ page, q, includeDisabled });
   return json(result);
 }

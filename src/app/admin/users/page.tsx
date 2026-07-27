@@ -10,7 +10,7 @@ export const metadata = { title: "Users" };
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; showDisabled?: string }>;
 }) {
   const staff = await requireStaff();
   if (!staff) redirect("/");
@@ -18,8 +18,13 @@ export default async function AdminUsersPage({
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const q = sp.q ?? "";
+  const showDisabled = sp.showDisabled === "1";
 
-  const { users, total, pageSize } = await listUsers({ page, q });
+  const { users, total, pageSize } = await listUsers({
+    page,
+    q,
+    includeDisabled: showDisabled,
+  });
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
@@ -42,6 +47,7 @@ export default async function AdminUsersPage({
           page={page}
           totalPages={totalPages}
           q={q}
+          showDisabled={showDisabled}
         />
       </div>
     </div>

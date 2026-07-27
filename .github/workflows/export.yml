@@ -39,7 +39,7 @@ jobs:
           tag_name: ${{ steps.date.outputs.tag }}
           name: "Data dump ${{ steps.date.outputs.tag }}"
           body: |
-            Auto-generated daily export of all SkipDB segments (all statuses) with vote counts. No user data.
+            Auto-generated daily export of SkipDB segments (approved, pending, and rejected — disabled/spam segments excluded) with vote counts. No user data.
 
             Import into a fresh instance: `pnpm db:import <url>`, then `pnpm db:resolve`.
 

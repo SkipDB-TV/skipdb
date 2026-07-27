@@ -29,24 +29,33 @@ export interface UserListPage {
  * Users ordered by submission volume, each with a total/approved count.
  * Paginated (default 100/page) since a real deployment can have thousands of
  * users — the list must never load them all into one request.
+ *
+ * Disabled users are excluded by default (a disabled account is usually a
+ * handled spammer — the list shouldn't fill up with them) — pass
+ * `includeDisabled: true` to see everyone.
  */
 export async function listUsers(
   opts: {
     page?: number;
     pageSize?: number;
     q?: string;
+    includeDisabled?: boolean;
   } = {},
 ): Promise<UserListPage> {
   const pageSize = opts.pageSize ?? 100;
   const page = Math.max(1, opts.page ?? 1);
   const q = opts.q?.trim();
-  const filter = q
-    ? or(
-        ilike(users.name, `%${q}%`),
-        ilike(users.email, `%${q}%`),
-        ilike(users.id, `%${q}%`),
-      )
-    : undefined;
+  const conditions = [
+    q
+      ? or(
+          ilike(users.name, `%${q}%`),
+          ilike(users.email, `%${q}%`),
+          ilike(users.id, `%${q}%`),
+        )
+      : undefined,
+    opts.includeDisabled ? undefined : eq(users.disabled, false),
+  ].filter((c): c is NonNullable<typeof c> => c != null);
+  const filter = conditions.length > 0 ? and(...conditions) : undefined;
 
   const [{ count: total }] = await db
     .select({ count: sql<number>`count(*)` })

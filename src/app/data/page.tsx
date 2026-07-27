@@ -73,9 +73,13 @@ export default function DumpPage() {
       <div className="mt-10 space-y-4">
         <Section title="What's in the dump">
           <p>
-            A single JSON file with every segment at every status (approved,
-            pending, rejected), plus vote counts and the title name and media
-            type. No accounts, no emails, no IP addresses — timestamps plus an
+            A single JSON file with every segment — approved, pending, or
+            rejected — plus vote counts and the title name and media type.{" "}
+            <strong className="text-white">Disabled</strong> segments (an
+            admin disabled the submitting account, e.g. a spammer) are always
+            excluded: that&apos;s removed content, not a moderation state, and
+            shouldn&apos;t resurface just because someone re-imports this
+            dump. No accounts, no emails, no IP addresses — timestamps plus an
             opaque submitter ID for moderation continuity.
           </p>
           <p>

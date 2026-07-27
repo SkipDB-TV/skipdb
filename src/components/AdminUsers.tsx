@@ -21,11 +21,13 @@ export function AdminUsers({
   page,
   totalPages,
   q,
+  showDisabled,
 }: {
   initial: UserListItem[];
   page: number;
   totalPages: number;
   q: string;
+  showDisabled: boolean;
 }) {
   const router = useRouter();
   const [users, setUsers] = useState(initial);
@@ -35,8 +37,16 @@ export function AdminUsers({
   function pageHref(p: number) {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
+    if (showDisabled) params.set("showDisabled", "1");
     params.set("page", String(p));
     return `/admin/users?${params.toString()}`;
+  }
+
+  function toggleShowDisabled(next: boolean) {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("q", search.trim());
+    if (next) params.set("showDisabled", "1");
+    router.push(`/admin/users?${params.toString()}`);
   }
 
   async function toggle(u: UserListItem) {
@@ -67,26 +77,39 @@ export function AdminUsers({
 
   return (
     <div className="space-y-4">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const params = new URLSearchParams();
-          if (search.trim()) params.set("q", search.trim());
-          router.push(`/admin/users?${params.toString()}`);
-        }}
-        className="flex max-w-sm gap-2"
-      >
-        <input
-          type="text"
-          placeholder="Search by name, email, or id…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-midnight-850 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-skip focus:outline-none"
-        />
-        <button className="btn-ghost shrink-0 text-sm" type="submit">
-          Search
-        </button>
-      </form>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const params = new URLSearchParams();
+            if (search.trim()) params.set("q", search.trim());
+            if (showDisabled) params.set("showDisabled", "1");
+            router.push(`/admin/users?${params.toString()}`);
+          }}
+          className="flex max-w-sm gap-2"
+        >
+          <input
+            type="text"
+            placeholder="Search by name, email, or id…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-midnight-850 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-skip focus:outline-none"
+          />
+          <button className="btn-ghost shrink-0 text-sm" type="submit">
+            Search
+          </button>
+        </form>
+
+        <label className="flex shrink-0 items-center gap-2 text-sm text-slate-400">
+          <input
+            type="checkbox"
+            checked={showDisabled}
+            onChange={(e) => toggleShowDisabled(e.target.checked)}
+            className="h-4 w-4 rounded border-white/20 accent-skip"
+          />
+          Show disabled users
+        </label>
+      </div>
 
       {users.length === 0 ? (
         <div className="card p-10 text-center text-slate-400">No users found.</div>
