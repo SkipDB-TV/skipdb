@@ -259,6 +259,9 @@ export const votes = pgTable(
       table.segmentId,
       table.userId,
     ),
+    // Looked up by userId alone when purging a disabled user's votes — the
+    // composite unique index above can't serve that (userId isn't its prefix).
+    byUser: index("votes_user_idx").on(table.userId),
   }),
 );
 

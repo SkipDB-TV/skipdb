@@ -1,0 +1,1 @@
+CREATE INDEX "votes_user_idx" ON "votes" USING btree ("user_id");

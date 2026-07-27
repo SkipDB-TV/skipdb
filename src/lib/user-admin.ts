@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { segments, titles, users, moderationLog } from "@/db/schema";
+import { segments, titles, users, votes, moderationLog } from "@/db/schema";
 import { and, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { revokeApiKeys } from "./api-key";
 import type { User, Segment } from "@/db/schema";
@@ -30,11 +30,13 @@ export interface UserListPage {
  * Paginated (default 100/page) since a real deployment can have thousands of
  * users — the list must never load them all into one request.
  */
-export async function listUsers(opts: {
-  page?: number;
-  pageSize?: number;
-  q?: string;
-} = {}): Promise<UserListPage> {
+export async function listUsers(
+  opts: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+  } = {},
+): Promise<UserListPage> {
   const pageSize = opts.pageSize ?? 100;
   const page = Math.max(1, opts.page ?? 1);
   const q = opts.q?.trim();
@@ -154,25 +156,120 @@ export async function getUserDetail(
 }
 
 /**
- * Soft-disable a user: revoke their API key, flag the account, and bulk-flip
+ * Delete every vote a user cast on OTHER people's segments and bulk-recompute
+ * the aggregates that depended on them (the affected segments' votes_up/down/
+ * score, and the reputation of the segments' owners — reputation is defined
+ * as the sum of score across a user's own non-disabled segments). Unlike
+ * `disableUser`'s segment soft-disable, this is a hard delete: votes have no
+ * "disabled" concept for callers to filter around, so a stale vote would
+ * otherwise sit baked into another user's segment score/rank forever.
+ *
+ * Deliberately just 4 set-based statements total, none of them looping per
+ * vote — a spammer who cast zero or one vote costs the same one SELECT (which
+ * comes back empty and short-circuits) as a spammer who cast a million, and
+ * even the worst case never issues more than one query per affected table.
+ */
+async function purgeUserVotes(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  userId: string,
+): Promise<void> {
+  const affected = await tx
+    .select({ segmentId: votes.segmentId, ownerId: segments.submittedBy })
+    .from(votes)
+    .innerJoin(segments, eq(segments.id, votes.segmentId))
+    .where(eq(votes.userId, userId));
+
+  if (affected.length === 0) return;
+
+  await tx.delete(votes).where(eq(votes.userId, userId));
+
+  const segmentIds = [...new Set(affected.map((a) => a.segmentId))];
+  const segmentIdList = sql.join(
+    segmentIds.map((id) => sql`${id}`),
+    sql`, `,
+  );
+  // Zero first so segments left with no remaining votes land at 0/0/0 —
+  // the aggregate query below only touches rows that still have votes.
+  await tx
+    .update(segments)
+    .set({ votesUp: 0, votesDown: 0, score: 0, updatedAt: new Date() })
+    .where(inArray(segments.id, segmentIds));
+
+  await tx.execute(sql`
+    UPDATE segments s
+    SET votes_up = agg.up,
+        votes_down = agg.down,
+        score = agg.up - agg.down,
+        updated_at = now()
+    FROM (
+      SELECT segment_id,
+             sum(case when value = 1 then 1 else 0 end) AS up,
+             sum(case when value = -1 then 1 else 0 end) AS down
+      FROM votes
+      WHERE segment_id IN (${segmentIdList})
+      GROUP BY segment_id
+    ) agg
+    WHERE s.id = agg.segment_id
+  `);
+
+  const ownerIds = [
+    ...new Set(
+      affected.map((a) => a.ownerId).filter((id): id is string => id != null),
+    ),
+  ];
+  if (ownerIds.length === 0) return;
+
+  const ownerIdList = sql.join(
+    ownerIds.map((id) => sql`${id}`),
+    sql`, `,
+  );
+  await tx
+    .update(users)
+    .set({ reputation: 0 })
+    .where(inArray(users.id, ownerIds));
+
+  await tx.execute(sql`
+    UPDATE users u
+    SET reputation = agg.total
+    FROM (
+      SELECT submitted_by, sum(score) AS total
+      FROM segments
+      WHERE submitted_by IN (${ownerIdList}) AND status != 'disabled'
+      GROUP BY submitted_by
+    ) agg
+    WHERE u.id = agg.submitted_by
+  `);
+}
+
+/**
+ * Soft-disable a user: revoke their API key, flag the account, bulk-flip
  * every segment they've submitted to `status: "disabled"` so it drops out of
  * every public/matching query that already filters on status (approved,
- * pending, etc.) — no separate "disabled" column for callers to learn about.
+ * pending, etc.) — no separate "disabled" column for callers to learn about —
+ * and purge their votes on other people's segments (see `purgeUserVotes`).
  *
- * Each segment's status right before the flip is snapshotted onto its
- * moderation_log "disable" entry (`detail.previousStatus`) so `enableUser`
- * can restore it exactly. Nothing is deleted.
+ * Each disabled segment's status right before the flip is snapshotted onto
+ * its moderation_log "disable" entry (`detail.previousStatus`) so
+ * `enableUser` can restore it exactly. Segments are never deleted; votes are
+ * (see `purgeUserVotes`) since there's nothing to restore them to.
  */
-export async function disableUser(userId: string, moderatorId: string): Promise<void> {
+export async function disableUser(
+  userId: string,
+  moderatorId: string,
+): Promise<void> {
   await revokeApiKeys(userId);
 
   await db.transaction(async (tx) => {
     await tx.update(users).set({ disabled: true }).where(eq(users.id, userId));
 
+    await purgeUserVotes(tx, userId);
+
     const toDisable = await tx
       .select({ id: segments.id, status: segments.status })
       .from(segments)
-      .where(and(eq(segments.submittedBy, userId), ne(segments.status, "disabled")));
+      .where(
+        and(eq(segments.submittedBy, userId), ne(segments.status, "disabled")),
+      );
 
     if (toDisable.length === 0) return;
 
@@ -204,14 +301,19 @@ export async function disableUser(userId: string, moderatorId: string): Promise<
  * it for review — if that's somehow missing). Does not restore a revoked API
  * key; the user generates a new one.
  */
-export async function enableUser(userId: string, moderatorId: string): Promise<void> {
+export async function enableUser(
+  userId: string,
+  moderatorId: string,
+): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.update(users).set({ disabled: false }).where(eq(users.id, userId));
 
     const disabledSegments = await tx
       .select({ id: segments.id })
       .from(segments)
-      .where(and(eq(segments.submittedBy, userId), eq(segments.status, "disabled")));
+      .where(
+        and(eq(segments.submittedBy, userId), eq(segments.status, "disabled")),
+      );
     if (disabledSegments.length === 0) return;
 
     const ids = disabledSegments.map((s) => s.id);
@@ -222,7 +324,12 @@ export async function enableUser(userId: string, moderatorId: string): Promise<v
         detail: moderationLog.detail,
       })
       .from(moderationLog)
-      .where(and(inArray(moderationLog.segmentId, ids), eq(moderationLog.action, "disable")))
+      .where(
+        and(
+          inArray(moderationLog.segmentId, ids),
+          eq(moderationLog.action, "disable"),
+        ),
+      )
       .orderBy(desc(moderationLog.createdAt));
 
     // Keep only the most recent "disable" entry per segment (rows arrive
