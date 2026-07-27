@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { titles, episodes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { findByImdb, getSeasonEpisodes, tmdbEnabled } from "./tmdb";
 import type { Title } from "@/db/schema";
 
@@ -85,11 +85,17 @@ async function refreshTitleMeta(title: Title): Promise<Title | null> {
 /** Ensure episode metadata is cached for a series season (best-effort). */
 export async function ensureSeasonEpisodes(title: Title, season: number) {
   if (title.mediaType !== "series" || !title.tmdbId) return;
-  const have = await db
-    .select()
+  // Targeted existence check (served by episodes_title_season_episode_idx) —
+  // deliberately not `select * ... where titleId = title.id` then filtering
+  // in JS, which pulls every season's full rows (incl. overview/metadata)
+  // just to answer a yes/no question, and gets called once per season by
+  // callers that loop over a show's whole season list (see coverage.ts).
+  const [cached] = await db
+    .select({ id: episodes.id })
     .from(episodes)
-    .where(eq(episodes.titleId, title.id));
-  if (have.some((e) => e.season === season)) return;
+    .where(and(eq(episodes.titleId, title.id), eq(episodes.season, season)))
+    .limit(1);
+  if (cached) return;
 
   const eps = await getSeasonEpisodes(title.tmdbId, season);
   for (const e of eps) {
