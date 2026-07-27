@@ -15,7 +15,8 @@ export async function GET() {
     .select({
       segment: segments,
       titleName: titles.name,
-      submitter: users.name,
+      submitterName: users.name,
+      submitterEmail: users.email,
     })
     .from(segments)
     .leftJoin(titles, eq(segments.titleId, titles.id))
@@ -38,7 +39,9 @@ export async function GET() {
       start_clock: msToClock(r.segment.startMs),
       end_clock: msToClock(r.segment.endMs),
       duration_ms: r.segment.durationMs,
-      submitted_by: r.submitter,
+      submitted_by: r.submitterName,
+      submitted_by_email: r.submitterEmail,
+      submitted_by_id: r.segment.submittedBy,
       submitted_at: r.segment.createdAt,
     })),
   });

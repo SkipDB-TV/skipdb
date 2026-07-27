@@ -18,7 +18,8 @@ export default async function AdminPage() {
     .select({
       segment: segments,
       titleName: titles.name,
-      submitter: users.name,
+      submitterName: users.name,
+      submitterEmail: users.email,
     })
     .from(segments)
     .leftJoin(titles, eq(segments.titleId, titles.id))
@@ -51,7 +52,9 @@ export default async function AdminPage() {
     startMs: r.segment.startMs,
     endMs: r.segment.endMs,
     durationMs: r.segment.durationMs,
-    submittedBy: r.submitter,
+    submittedById: r.segment.submittedBy,
+    submittedByName: r.submitterName,
+    submittedByEmail: r.submitterEmail,
     createdAt: r.segment.createdAt.toISOString(),
     context: context.get(r.segment.id) ?? null,
   }));

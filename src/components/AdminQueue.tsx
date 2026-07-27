@@ -17,7 +17,9 @@ export interface QueueItem {
   startMs: number;
   endMs: number;
   durationMs: number | null;
-  submittedBy: string | null;
+  submittedById: string | null;
+  submittedByName: string | null;
+  submittedByEmail: string | null;
   createdAt: string;
   context: ReviewContext | null;
 }
@@ -88,8 +90,18 @@ export function AdminQueue({ initial }: { initial: QueueItem[] }) {
                 </span>
               </p>
               <p className="text-xs text-slate-500">
-                by {i.submittedBy ?? "unknown"} ·{" "}
-                {new Date(i.createdAt).toLocaleString()}
+                by{" "}
+                {i.submittedById ? (
+                  <Link
+                    href={`/admin/users/${i.submittedById}`}
+                    className="text-slate-300 hover:underline"
+                  >
+                    {i.submittedByName ?? i.submittedByEmail ?? "anonymous"}
+                  </Link>
+                ) : (
+                  "unknown"
+                )}{" "}
+                · {new Date(i.createdAt).toLocaleString()}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
