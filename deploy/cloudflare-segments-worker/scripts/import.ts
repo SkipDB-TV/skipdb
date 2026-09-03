@@ -51,9 +51,39 @@ if (!CF_ACCOUNT_ID || !CF_DATABASE_ID || !CF_API_TOKEN) {
 const FULL = process.argv.includes("--full");
 const D1_URL = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/d1/database/${CF_DATABASE_ID}/query`;
 
-// How many INSERT queries to fire in parallel. Keep low enough not to hit D1
-// rate limits (default: 20 concurrent, ~500ms per batch of 20 = ~25 req/s).
-const CONCURRENCY = 20;
+// D1 is a single SQLite instance — many small writes hitting it in parallel is
+// what triggers "storage operation exceeded timeout" (code 7429). We fight that
+// on three fronts:
+//   1. Fewer, bigger writes: batch ROWS_PER_BATCH episodes into one multi-row
+//      INSERT (7 columns × 14 rows = 98 bound params, just under D1's 100 cap).
+//   2. Modest write parallelism instead of a 20-wide fan-out.
+//   3. Retry transient D1/network errors with exponential backoff — these are
+//      expected under load and almost always succeed on a later attempt.
+const ROWS_PER_BATCH = 14;
+const WRITE_CONCURRENCY = 5;
+const MAX_RETRIES = 6;
+const RETRY_BASE_MS = 500;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Transient D1 / network failures that a later attempt tends to clear. */
+function isRetriable(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes("7429") ||
+    msg.includes("exceeded timeout") ||
+    msg.includes("object to be reset") ||
+    msg.includes("storage operation") ||
+    msg.includes("network connection lost") ||
+    msg.includes("please try again") ||
+    msg.includes("http 429") ||
+    msg.includes("http 500") ||
+    msg.includes("http 503") ||
+    msg.includes("fetch failed") ||
+    msg.includes("etimedout") ||
+    msg.includes("econnreset")
+  );
+}
 
 // ---------------------------------------------------------------------------
 
@@ -96,18 +126,34 @@ interface Episode {
 }
 
 async function d1(sql: string, params: unknown[] = []): Promise<D1Row[]> {
-  const res = await fetch(D1_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${CF_API_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ sql, params }),
-  });
-  const body = (await res.json()) as D1Response;
-  if (!body.success)
-    throw new Error(`D1 error: ${JSON.stringify(body.errors)}`);
-  return body.result?.[0]?.results ?? [];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(D1_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${CF_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sql, params }),
+      });
+      if (res.status === 429 || res.status >= 500)
+        throw new Error(`D1 error: HTTP ${res.status}`);
+      const body = (await res.json()) as D1Response;
+      if (!body.success)
+        throw new Error(`D1 error: ${JSON.stringify(body.errors)}`);
+      return body.result?.[0]?.results ?? [];
+    } catch (err) {
+      if (attempt >= MAX_RETRIES || !isRetriable(err)) throw err;
+      const backoff =
+        RETRY_BASE_MS * 2 ** attempt + Math.floor(Math.random() * 250);
+      process.stdout.write(
+        `\n  transient D1 error (${
+          err instanceof Error ? err.message : String(err)
+        }) — retrying in ${backoff}ms [attempt ${attempt + 1}/${MAX_RETRIES}]\n`,
+      );
+      await sleep(backoff);
+    }
+  }
 }
 
 function episodeKey(
@@ -195,32 +241,38 @@ async function main() {
   }
   console.log(`Upserting ${toUpdate.length} episodes ...`);
 
-  const INSERT = `
-    INSERT OR REPLACE INTO episodes
-      (key, imdb_id, season, episode, segments, intro_length_estimate_ms, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `.trim();
+  // One row's worth of bound parameters, in column order.
+  const rowParams = (ep: Episode): unknown[] => [
+    ep.key,
+    ep.imdbId,
+    ep.season,
+    ep.episode,
+    JSON.stringify(ep.segments),
+    getIntroLengthEstimate(introsByImdbId, ep.imdbId, ep.season),
+    ep.maxUpdatedAt,
+  ];
 
-  const queries: [string, unknown[]][] = toUpdate.map((ep) => [
-    INSERT,
-    [
-      ep.key,
-      ep.imdbId,
-      ep.season,
-      ep.episode,
-      JSON.stringify(ep.segments),
-      getIntroLengthEstimate(introsByImdbId, ep.imdbId, ep.season),
-      ep.maxUpdatedAt,
-    ],
-  ]);
+  // Chunk episodes into multi-row INSERTs so D1 gets a handful of larger writes
+  // rather than thousands of tiny concurrent ones.
+  const batches: Episode[][] = [];
+  for (let i = 0; i < toUpdate.length; i += ROWS_PER_BATCH) {
+    batches.push(toUpdate.slice(i, i + ROWS_PER_BATCH));
+  }
+
+  const writeBatch = (batch: Episode[]) => {
+    const sql =
+      "INSERT OR REPLACE INTO episodes " +
+      "(key, imdb_id, season, episode, segments, intro_length_estimate_ms, updated_at) VALUES " +
+      batch.map(() => "(?, ?, ?, ?, ?, ?, ?)").join(", ");
+    return d1(sql, batch.flatMap(rowParams));
+  };
 
   let done = 0;
-  for (let i = 0; i < queries.length; i += CONCURRENCY) {
-    await Promise.all(
-      queries.slice(i, i + CONCURRENCY).map(([sql, params]) => d1(sql, params)),
-    );
-    done = Math.min(done + CONCURRENCY, queries.length);
-    process.stdout.write(`\r  ${done} / ${queries.length}`);
+  for (let i = 0; i < batches.length; i += WRITE_CONCURRENCY) {
+    const slice = batches.slice(i, i + WRITE_CONCURRENCY);
+    await Promise.all(slice.map(writeBatch));
+    done += slice.reduce((n, b) => n + b.length, 0);
+    process.stdout.write(`\r  ${done} / ${toUpdate.length}`);
   }
 
   console.log(`\nDone — upserted ${toUpdate.length} episodes.`);
