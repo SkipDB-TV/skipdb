@@ -1,9 +1,9 @@
 import { db } from "@/db";
-import { segments, moderationLog, users } from "@/db/schema";
+import { segments } from "@/db/schema";
 import { json, apiError } from "@/lib/api";
 import { requireStaff } from "@/lib/admin";
-import { config } from "@/lib/config";
-import { eq, sql } from "drizzle-orm";
+import { moderateSegments } from "@/lib/moderate";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -44,34 +44,10 @@ export async function POST(
       409,
     );
 
-  const newStatus = action === "approve" ? "approved" : "rejected";
-  await db
-    .update(segments)
-    .set({
-      status: newStatus,
-      reviewedBy: staff.id,
-      reviewedAt: new Date(),
-      rejectionReason: action === "reject" ? (reason ?? null) : null,
-      updatedAt: new Date(),
-    })
-    .where(eq(segments.id, segmentId));
+  await moderateSegments([segment], action, staff.id, reason ?? null);
 
-  await db.insert(moderationLog).values({
-    segmentId,
-    moderatorId: staff.id,
-    action,
-    reason: reason ?? null,
+  return json({
+    id: segmentId,
+    status: action === "approve" ? "approved" : "rejected",
   });
-
-  // On approval, grant the contributor reputation.
-  if (action === "approve" && segment.submittedBy) {
-    await db
-      .update(users)
-      .set({
-        reputation: sql`${users.reputation} + ${config.review.reputationPerApproval}`,
-      })
-      .where(eq(users.id, segment.submittedBy));
-  }
-
-  return json({ id: segmentId, status: newStatus });
 }

@@ -34,6 +34,14 @@ function delta(ms: number): string {
 export function AdminQueue({ initial }: { initial: QueueItem[] }) {
   const [items, setItems] = useState(initial);
   const [busy, setBusy] = useState<number | null>(null);
+  const [busyUser, setBusyUser] = useState<string | null>(null);
+
+  // How many queued items each contributor has — drives the "approve all from
+  // this user" shortcut, which only earns its place when they have more than one.
+  const countBySubmitter = items.reduce<Record<string, number>>((acc, i) => {
+    if (i.submittedById) acc[i.submittedById] = (acc[i.submittedById] ?? 0) + 1;
+    return acc;
+  }, {});
 
   async function act(id: number, action: "approve" | "reject") {
     let reason: string | undefined;
@@ -50,6 +58,26 @@ export function AdminQueue({ initial }: { initial: QueueItem[] }) {
       if (res.ok) setItems((prev) => prev.filter((i) => i.id !== id));
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function approveAllFrom(submitterId: string, label: string) {
+    const count = countBySubmitter[submitterId] ?? 0;
+    if (!confirm(`Approve all ${count} pending submissions from ${label}?`)) {
+      return;
+    }
+    setBusyUser(submitterId);
+    try {
+      const res = await fetch(`/api/admin/segments/approve-all`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submitted_by: submitterId }),
+      });
+      if (res.ok) {
+        setItems((prev) => prev.filter((i) => i.submittedById !== submitterId));
+      }
+    } finally {
+      setBusyUser(null);
     }
   }
 
@@ -104,21 +132,40 @@ export function AdminQueue({ initial }: { initial: QueueItem[] }) {
                 · {new Date(i.createdAt).toLocaleString()}
               </p>
             </div>
-            <div className="flex shrink-0 gap-2">
-              <button
-                className="btn-primary"
-                disabled={busy === i.id}
-                onClick={() => act(i.id, "approve")}
-              >
-                Approve
-              </button>
-              <button
-                className="btn-danger"
-                disabled={busy === i.id}
-                onClick={() => act(i.id, "reject")}
-              >
-                Reject
-              </button>
+            <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+              <div className="flex gap-2">
+                <button
+                  className="btn-primary"
+                  disabled={busy === i.id || busyUser === i.submittedById}
+                  onClick={() => act(i.id, "approve")}
+                >
+                  Approve
+                </button>
+                <button
+                  className="btn-danger"
+                  disabled={busy === i.id || busyUser === i.submittedById}
+                  onClick={() => act(i.id, "reject")}
+                >
+                  Reject
+                </button>
+              </div>
+              {i.submittedById &&
+                (countBySubmitter[i.submittedById] ?? 0) > 1 && (
+                  <button
+                    className="btn-ghost text-xs"
+                    disabled={busyUser === i.submittedById}
+                    onClick={() =>
+                      approveAllFrom(
+                        i.submittedById!,
+                        i.submittedByName ?? i.submittedByEmail ?? "this user",
+                      )
+                    }
+                  >
+                    {busyUser === i.submittedById
+                      ? "Approving…"
+                      : `Approve all ${countBySubmitter[i.submittedById]} from this user`}
+                  </button>
+                )}
             </div>
           </div>
 
@@ -136,10 +183,19 @@ function ContextPanel({ item, ctx }: { item: QueueItem; ctx: ReviewContext }) {
       : 0;
 
   const durationBadge = {
-    "none-provided": { label: "no duration given", cls: "bg-white/10 text-slate-400" },
-    first: { label: "first with a duration", cls: "bg-signal/15 text-signal-bright" },
+    "none-provided": {
+      label: "no duration given",
+      cls: "bg-white/10 text-slate-400",
+    },
+    first: {
+      label: "first with a duration",
+      cls: "bg-signal/15 text-signal-bright",
+    },
     matches: { label: "duration matches others", cls: "bg-ok/15 text-ok" },
-    close: { label: "duration close (offset)", cls: "bg-skip/15 text-skip-bright" },
+    close: {
+      label: "duration close (offset)",
+      cls: "bg-skip/15 text-skip-bright",
+    },
     differs: { label: "duration differs", cls: "bg-warn/15 text-amber-300" },
   }[ctx.durationCompare];
 
