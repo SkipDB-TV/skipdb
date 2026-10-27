@@ -31,6 +31,14 @@ export function AdminUsers({
 }) {
   const router = useRouter();
   const [users, setUsers] = useState(initial);
+  // Paging/searching only changes the query string, so this component isn't
+  // remounted — re-sync when the server sends a new list ("adjust state
+  // during render", as in SegmentPanel).
+  const [seenInitial, setSeenInitial] = useState(initial);
+  if (initial !== seenInitial) {
+    setSeenInitial(initial);
+    setUsers(initial);
+  }
   const [search, setSearch] = useState(q);
   const [busy, setBusy] = useState<string | null>(null);
 

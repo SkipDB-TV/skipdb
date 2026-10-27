@@ -73,6 +73,11 @@ export default async function AdminPage() {
           <Link href="/admin/users" className="btn-ghost text-sm">
             Users
           </Link>
+          {staff.role === "admin" && (
+            <Link href="/admin/activity" className="btn-ghost text-sm">
+              Activity
+            </Link>
+          )}
         </div>
       </div>
       <p className="mt-2 text-sm text-slate-400">

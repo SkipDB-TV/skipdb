@@ -24,6 +24,15 @@ export interface QueueItem {
   context: ReviewContext | null;
 }
 
+/** Clock time plus raw seconds, e.g. 5:15 (315s) — easier to compare with other sources. */
+function Time({ ms }: { ms: number }) {
+  return (
+    <>
+      {msToClock(ms)} <span className="text-slate-500">({msToSec(ms)}s)</span>
+    </>
+  );
+}
+
 /** ms delta -> signed seconds string, e.g. +2.3s / −1.0s. */
 function delta(ms: number): string {
   const s = ms / 1000;
@@ -132,7 +141,7 @@ export function AdminQueue({ initial }: { initial: QueueItem[] }) {
                 </Link>
               </div>
               <p className="mono text-sm text-slate-300">
-                {msToClock(i.startMs)} → {msToClock(i.endMs)}{" "}
+                <Time ms={i.startMs} /> → <Time ms={i.endMs} />{" "}
                 <span className="text-slate-500">
                   (skips {msToSec(i.endMs - i.startMs)}s)
                 </span>
@@ -265,9 +274,9 @@ function ContextPanel({ item, ctx }: { item: QueueItem; ctx: ReviewContext }) {
               {ctx.episode.approvedCount} approved already
             </p>
             <p className="text-slate-500">
-              best: {msToClock(ctx.episode.existing.startMs)}→
-              {msToClock(ctx.episode.existing.endMs)} (
-              {msToSec(ctx.episode.existing.lengthMs)}s)
+              best: <Time ms={ctx.episode.existing.startMs} /> →{" "}
+              <Time ms={ctx.episode.existing.endMs} /> · length{" "}
+              {msToSec(ctx.episode.existing.lengthMs)}s
             </p>
             <p className="text-slate-500">
               vs this: start {delta(ctx.episode.startDeltaMs ?? 0)}, length{" "}

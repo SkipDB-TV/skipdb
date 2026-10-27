@@ -37,6 +37,10 @@ export async function POST(
   if (READ_ONLY) return readOnlyError();
   const staff = await requireStaff();
   if (!staff) return apiError("Forbidden", 403);
+  // Disabling purges votes and hides every submission at once, and roles grant
+  // access — both admin-only. Moderators can still view users.
+  if (staff.role !== "admin")
+    return apiError("Only admins can change user accounts", 403);
 
   const { id } = await params;
   if (id === staff.id)
@@ -58,12 +62,11 @@ export async function POST(
     .where(eq(users.id, id))
     .limit(1);
   if (!exists) return apiError("User not found", 404);
+  // Admins can't disable or demote each other — that's done in the database.
+  if (exists.role === "admin")
+    return apiError("Admins can't be changed here", 400);
 
   if (parsed.data.action === "set-role") {
-    if (staff.role !== "admin")
-      return apiError("Only admins can change roles", 403);
-    if (exists.role === "admin")
-      return apiError("Admins can't be changed here", 400);
     await db
       .update(users)
       .set({ role: parsed.data.role })

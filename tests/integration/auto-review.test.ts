@@ -174,7 +174,7 @@ describe("moderator role toggle", () => {
     expect((await getUserByEmail(user.email))?.role).toBe("user");
   });
 
-  it("is admin-only and can't touch admins", async () => {
+  it("is admin-only (roles and disabling) and can't touch admins", async () => {
     const mod = await registerStaff("moderator");
     const admin = await registerStaff("admin");
     const otherAdmin = await registerStaff("admin");
@@ -185,9 +185,51 @@ describe("moderator role toggle", () => {
       .send({ action: "set-role", role: "moderator" });
     expect(byMod.status).toBe(403);
 
+    const disableByMod = await mod.agent
+      .post(`/api/admin/users/${user.id}`)
+      .send({ action: "disable" });
+    expect(disableByMod.status).toBe(403);
+    expect((await getUserByEmail(user.email))?.disabled).toBe(false);
+
     const onAdmin = await admin.agent
       .post(`/api/admin/users/${otherAdmin.id}`)
       .send({ action: "set-role", role: "user" });
     expect(onAdmin.status).toBe(400);
+
+    const disableAdmin = await admin.agent
+      .post(`/api/admin/users/${otherAdmin.id}`)
+      .send({ action: "disable" });
+    expect(disableAdmin.status).toBe(400);
+  });
+});
+
+describe("staff activity", () => {
+  it("shows staff approvals and a collapsed user disable to admins only", async () => {
+    const admin = await registerStaff("admin");
+    const mod = await registerStaff("moderator");
+    const user = await registerUser();
+
+    const a = await submit(user.agent, "tt5600001", 1);
+    await submit(user.agent, "tt5600001", 2, 120_000, 150_000);
+    await moderate(mod.agent, a.id, "approve");
+    await admin.agent
+      .post(`/api/admin/users/${user.id}`)
+      .send({ action: "disable" });
+
+    const byMod = await admin.agent.get(`/admin/activity?moderator=${mod.id}`);
+    expect(byMod.status).toBe(200);
+    expect(byMod.text).toContain("approved");
+
+    // One row for the disable, covering both submissions.
+    const byAdmin = await admin.agent.get(
+      `/admin/activity?moderator=${admin.id}`,
+    );
+    // Count rendered HTML only — Next also streams the same tree as JSON.
+    expect(byAdmin.text.match(/>disabled user<\/span>/g)).toHaveLength(1);
+    expect(byAdmin.text).toContain("(<!-- -->2<!-- --> submission<!-- -->s");
+
+    const asMod = await mod.agent.get("/admin/activity").redirects(0);
+    expect(asMod.status).toBeGreaterThanOrEqual(300);
+    expect(asMod.status).toBeLessThan(400);
   });
 });

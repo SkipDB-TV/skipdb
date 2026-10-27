@@ -127,11 +127,15 @@ export function AdminUserDetail({
               {new Date(current.createdAt).toLocaleDateString()}
             </p>
           </div>
-          {isSelf ? (
-            <p className="text-xs text-slate-500">You can&apos;t change your own account.</p>
+          {!viewerIsAdmin ? null : isSelf || current.role === "admin" ? (
+            <p className="text-xs text-slate-500">
+              {isSelf
+                ? "You can't change your own account."
+                : "Admins can't be changed here."}
+            </p>
           ) : (
             <div className="flex gap-2">
-              {viewerIsAdmin && current.role !== "admin" && !current.disabled && (
+              {!current.disabled && (
                 <button
                   className="btn-ghost"
                   disabled={busy}
