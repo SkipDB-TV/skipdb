@@ -24,6 +24,22 @@ describe("segment submission", () => {
     expect(res.status).toBe(401);
   });
 
+  it("rejects a recap on a movie but accepts one on an episode", async () => {
+    const key = await createApiKey();
+    const post = (body: Record<string, unknown>) =>
+      request(BASE_URL)
+        .post("/api/segments")
+        .set("Authorization", `Bearer ${key}`)
+        .send({ segment_type: "recap", start_ms: 0, end_ms: 45_000, ...body });
+
+    const movie = await post({ imdb_id: "tt2000010" });
+    expect(movie.status).toBe(422);
+    expect(movie.body.error).toMatch(/movies can't have a recap/);
+
+    const episode = await post({ imdb_id: "tt2000011", season: 1, episode: 2 });
+    expect(episode.status).toBe(201);
+  });
+
   it("rejects an end time before the start time", async () => {
     const key = await createApiKey();
     const res = await request(BASE_URL)

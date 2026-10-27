@@ -103,6 +103,12 @@ export function SegmentPanel({
     }
   }
 
+  // Recaps are an episode format — movies don't get the option.
+  const submittableTypes =
+    season == null && episode == null
+      ? SEGMENT_ORDER.filter((t) => t !== "recap")
+      : SEGMENT_ORDER;
+
   const grouped = SEGMENT_ORDER.map((t) => ({
     type: t,
     items: segments.filter((s) => s.segmentType === t),
@@ -185,6 +191,7 @@ export function SegmentPanel({
                       <div key={s.id} className="card p-4">
                         <SegmentForm
                           mode="edit"
+                          types={submittableTypes}
                           initialType={s.segmentType}
                           initialStart={String(msToSec(s.startMs))}
                           initialEnd={String(msToSec(s.endMs))}
@@ -308,6 +315,7 @@ export function SegmentPanel({
           </p>
           <SegmentForm
             mode="create"
+            types={submittableTypes}
             initialType="intro"
             initialStart=""
             initialEnd=""
@@ -415,6 +423,7 @@ interface FormPayload {
 
 function SegmentForm({
   mode,
+  types,
   initialType,
   initialStart,
   initialEnd,
@@ -425,6 +434,8 @@ function SegmentForm({
   onCancel,
 }: {
   mode: "create" | "edit";
+  /** Types offered in the picker (an existing segment's own type is always shown). */
+  types: SegmentTypeName[];
   initialType: SegmentTypeName;
   initialStart: string;
   initialEnd: string;
@@ -483,8 +494,8 @@ function SegmentForm({
         if (mode === "create") {
           // Advance to the next segment type; keep duration so the
           // user can quickly submit the same times for a different type.
-          const nextIdx = SEGMENT_ORDER.indexOf(type) + 1;
-          if (nextIdx < SEGMENT_ORDER.length) setType(SEGMENT_ORDER[nextIdx]);
+          const nextIdx = types.indexOf(type) + 1;
+          if (nextIdx < types.length) setType(types[nextIdx]);
           setEnd("");
           setStart(end);
         }
@@ -529,7 +540,7 @@ function SegmentForm({
             }
             onChange={(e) => setType(e.target.value as SegmentTypeName)}
           >
-            {SEGMENT_ORDER.map((t) => (
+            {(types.includes(type) ? types : [type, ...types]).map((t) => (
               <option key={t} value={t}>
                 {SEGMENT_META[t].label}
               </option>

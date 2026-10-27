@@ -71,8 +71,8 @@ export async function getUserByEmail(email: string): Promise<{
 }
 
 /**
- * Directly promote a test account to staff — there's no API for this (by
- * design), so admin-endpoint tests reach past the app to set it up.
+ * Directly promote a test account to staff — there's no API for granting
+ * admin (by design), so admin-endpoint tests reach past the app to set it up.
  */
 export async function setUserRole(
   id: string,

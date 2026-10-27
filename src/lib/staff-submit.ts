@@ -38,6 +38,7 @@ export async function insertStaffSegment(
     endMs: input.endMs,
     durationMs: input.durationMs,
     segmentType: input.segmentType,
+    isMovie: input.season == null && input.episode == null,
   });
   if (boundsError) throw boundsError;
 

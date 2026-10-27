@@ -12,12 +12,16 @@ import type { Segment } from "@/db/schema";
  *
  * Callers own the filtering: only pass segments that should actually be
  * actioned (e.g. drop `disabled` ones first).
+ *
+ * `reviewerId` is null for system decisions (e.g. peer consensus); pass
+ * `auto: true` so they're flagged and logged as auto-approvals.
  */
 export async function moderateSegments(
   segs: Pick<Segment, "id" | "submittedBy">[],
   action: "approve" | "reject",
-  reviewerId: string,
+  reviewerId: string | null,
   reason?: string | null,
+  { auto = false }: { auto?: boolean } = {},
 ): Promise<void> {
   if (segs.length === 0) return;
 
@@ -31,6 +35,7 @@ export async function moderateSegments(
       reviewedBy: reviewerId,
       reviewedAt: new Date(),
       rejectionReason: action === "reject" ? (reason ?? null) : null,
+      ...(auto && { autoApproved: true }),
       updatedAt: new Date(),
     })
     .where(inArray(segments.id, ids));
@@ -39,7 +44,7 @@ export async function moderateSegments(
     ids.map((segmentId) => ({
       segmentId,
       moderatorId: reviewerId,
-      action,
+      action: auto && action === "approve" ? "auto-approve" : action,
       reason: reason ?? null,
     })),
   );

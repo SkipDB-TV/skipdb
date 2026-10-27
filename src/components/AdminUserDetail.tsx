@@ -46,6 +46,7 @@ export function AdminUserDetail({
   page,
   totalPages,
   isSelf,
+  viewerIsAdmin,
 }: {
   user: DetailUser;
   submissions: DetailSubmission[];
@@ -53,6 +54,7 @@ export function AdminUserDetail({
   page: number;
   totalPages: number;
   isSelf: boolean;
+  viewerIsAdmin: boolean;
 }) {
   const [current, setCurrent] = useState(user);
   const [busy, setBusy] = useState(false);
@@ -74,6 +76,29 @@ export function AdminUserDetail({
         body: JSON.stringify({ action }),
       });
       if (res.ok) setCurrent((prev) => ({ ...prev, disabled: action === "disable" }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setRole(role: "user" | "moderator") {
+    const label = current.name ?? current.email ?? current.id;
+    if (
+      !confirm(
+        role === "moderator"
+          ? `Make ${label} a moderator? They'll be able to approve and reject submissions and disable users.`
+          : `Remove ${label}'s moderator access?`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/users/${current.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set-role", role }),
+      });
+      if (res.ok) setCurrent((prev) => ({ ...prev, role }));
     } finally {
       setBusy(false);
     }
@@ -103,15 +128,28 @@ export function AdminUserDetail({
             </p>
           </div>
           {isSelf ? (
-            <p className="text-xs text-slate-500">You can&apos;t disable your own account.</p>
+            <p className="text-xs text-slate-500">You can&apos;t change your own account.</p>
           ) : (
-            <button
-              className={current.disabled ? "btn-primary" : "btn-danger"}
-              disabled={busy}
-              onClick={toggle}
-            >
-              {current.disabled ? "Enable user" : "Disable user"}
-            </button>
+            <div className="flex gap-2">
+              {viewerIsAdmin && current.role !== "admin" && !current.disabled && (
+                <button
+                  className="btn-ghost"
+                  disabled={busy}
+                  onClick={() =>
+                    setRole(current.role === "moderator" ? "user" : "moderator")
+                  }
+                >
+                  {current.role === "moderator" ? "Remove moderator" : "Make moderator"}
+                </button>
+              )}
+              <button
+                className={current.disabled ? "btn-primary" : "btn-danger"}
+                disabled={busy}
+                onClick={toggle}
+              >
+                {current.disabled ? "Enable user" : "Disable user"}
+              </button>
+            </div>
           )}
         </div>
       </div>

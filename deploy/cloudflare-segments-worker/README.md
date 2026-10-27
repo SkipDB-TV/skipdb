@@ -88,6 +88,14 @@ pnpm d1:import
 pnpm d1:import:full
 ```
 
+The importer batches writes, keeps write concurrency low, and retries transient
+D1 errors (e.g. `code 7429 — storage operation exceeded timeout`) with
+exponential backoff. If a run still fails partway, it's safe to just re-run:
+writes are `INSERT OR REPLACE` and the incremental run re-selects every episode
+whose `updated_at` in D1 is still behind the dump, so the next run (or the next
+day's cron) finishes what a failed one started. `intro_length_estimate_ms` is
+recomputed from the full dump every run, so it never drifts.
+
 ---
 
 ## Local development

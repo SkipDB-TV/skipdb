@@ -8,7 +8,7 @@ import { getIntroLengthEstimate } from "@/lib/estimate";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
 import { submitSchema, validateSegmentBounds } from "@/lib/validation";
 import { getActor } from "@/lib/actor";
-import { reviewSubmission } from "@/lib/review";
+import { approveConfirmedPeers, reviewSubmission } from "@/lib/review";
 import { ensureTitle } from "@/lib/titles";
 import { rateLimit, rateLimitHeaders, clientIp } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
@@ -134,6 +134,7 @@ export async function POST(req: Request) {
     endMs: input.endMs,
     durationMs: input.durationMs,
     segmentType: input.segmentType,
+    isMovie: input.season == null && input.episode == null,
   });
   if (boundsError) return apiError(boundsError, 422);
 
@@ -226,7 +227,11 @@ export async function POST(req: Request) {
         durationMs: input.durationMs,
         excludeSegmentId: recentOwn.id,
       },
-      { role: actor.user.role, reputation: actor.user.reputation },
+      {
+      id: actor.user.id,
+      role: actor.user.role,
+      reputation: actor.user.reputation,
+    },
     );
 
     await db
@@ -249,6 +254,7 @@ export async function POST(req: Request) {
       action: "edit",
       reason: `auto-updated on resubmit within 24h; ${decision.reasons.join("; ")}`,
     });
+    await approveConfirmedPeers(decision, recentOwn.id);
 
     return json(
       {
@@ -281,7 +287,11 @@ export async function POST(req: Request) {
       endMs: input.endMs,
       durationMs: input.durationMs,
     },
-    { role: actor.user.role, reputation: actor.user.reputation },
+    {
+      id: actor.user.id,
+      role: actor.user.role,
+      reputation: actor.user.reputation,
+    },
   );
 
   const [created] = await db
@@ -310,6 +320,7 @@ export async function POST(req: Request) {
       reason: decision.reasons.join("; "),
     });
   }
+  await approveConfirmedPeers(decision, created.id);
 
   return json(
     {

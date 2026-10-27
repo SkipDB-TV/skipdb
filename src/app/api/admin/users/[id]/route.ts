@@ -24,7 +24,11 @@ export async function GET(
   return json(detail);
 }
 
-const actionSchema = z.object({ action: z.enum(["disable", "enable"]) });
+const actionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.enum(["disable", "enable"]) }),
+  // Admin-only: let trusted people into the review queue (or take them out).
+  z.object({ action: z.literal("set-role"), role: z.enum(["user", "moderator"]) }),
+]);
 
 export async function POST(
   req: Request,
@@ -36,7 +40,7 @@ export async function POST(
 
   const { id } = await params;
   if (id === staff.id)
-    return apiError("You can't disable your own account", 400);
+    return apiError("You can't change your own account", 400);
 
   let body: unknown;
   try {
@@ -45,14 +49,27 @@ export async function POST(
     return apiError("Invalid JSON body", 400);
   }
   const parsed = actionSchema.safeParse(body);
-  if (!parsed.success) return apiError("action must be disable or enable", 422);
+  if (!parsed.success)
+    return apiError("action must be disable, enable or set-role", 422);
 
   const [exists] = await db
-    .select({ id: users.id })
+    .select({ id: users.id, role: users.role })
     .from(users)
     .where(eq(users.id, id))
     .limit(1);
   if (!exists) return apiError("User not found", 404);
+
+  if (parsed.data.action === "set-role") {
+    if (staff.role !== "admin")
+      return apiError("Only admins can change roles", 403);
+    if (exists.role === "admin")
+      return apiError("Admins can't be changed here", 400);
+    await db
+      .update(users)
+      .set({ role: parsed.data.role })
+      .where(eq(users.id, id));
+    return json({ id, role: parsed.data.role });
+  }
 
   if (parsed.data.action === "disable") {
     await disableUser(id, staff.id);

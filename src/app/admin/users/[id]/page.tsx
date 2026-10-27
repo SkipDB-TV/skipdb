@@ -62,6 +62,7 @@ export default async function AdminUserDetailPage({
           page={page}
           totalPages={totalPages}
           isSelf={staff.id === detail.user.id}
+          viewerIsAdmin={staff.role === "admin"}
         />
       </div>
     </div>

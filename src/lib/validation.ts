@@ -109,8 +109,13 @@ export function validateSegmentBounds(input: {
   endMs: number;
   durationMs: number | null;
   segmentType: SegmentTypeName;
+  isMovie: boolean;
 }): string | null {
   const { startMs, endMs, durationMs, segmentType } = input;
+  // "Previously on…" recaps are an episode format; on a movie it's almost
+  // always a mislabelled intro or opening credits.
+  if (input.isMovie && segmentType === "recap")
+    return "movies can't have a recap — use intro instead";
   // 0,0 is the sentinel for "confirmed no segment of this type" — always valid.
   if (startMs === 0 && endMs === 0) return null;
   if (startMs < 0) return "start must be >= 0";

@@ -19,6 +19,14 @@ export const config = {
   review: {
     /** Reputation at or above this auto-approves a user's submissions. */
     trustedReputation: 50,
+    /**
+     * Also trusted: at least this many reviewed (approved + rejected)
+     * submissions with an approval rate at or above `trustedApprovalRate`.
+     * Unlike reputation (which votes also feed), this can't be reached by a
+     * contributor whose submissions keep getting rejected.
+     */
+    trustedMinReviewed: 5,
+    trustedApprovalRate: 0.9,
     /** Reputation granted to a user when one of their segments is approved. */
     reputationPerApproval: 5,
     /**
@@ -33,6 +41,11 @@ export const config = {
     consensusToleranceMs: 4_000,
     /** Minimum existing approved samples needed to trust a show's pattern. */
     minPatternSamples: 2,
+    /**
+     * For a submitter with a clean record (some approvals, no rejections), one
+     * approved sample from the same season is enough to trust the pattern.
+     */
+    cleanRecordSeasonSamples: 1,
   },
 
   limits: {

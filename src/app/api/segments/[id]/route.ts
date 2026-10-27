@@ -5,7 +5,7 @@ import { json, apiError, preflight } from "@/lib/api";
 import { getActor } from "@/lib/actor";
 import { editSchema, snapOutroEnd, validateSegmentBounds } from "@/lib/validation";
 import { parseTimeToMs, roundTime } from "@/lib/time";
-import { reviewSubmission } from "@/lib/review";
+import { approveConfirmedPeers, reviewSubmission } from "@/lib/review";
 import { findOverlappingOwnSegment } from "@/lib/segments";
 import type { SegmentTypeName } from "@/lib/config";
 import { READ_ONLY, readOnlyError } from "@/lib/read-only";
@@ -89,7 +89,13 @@ export async function PATCH(
     endMs = snapOutroEnd(endMs, durationMs);
   }
 
-  const boundsError = validateSegmentBounds({ startMs, endMs, durationMs, segmentType: type });
+  const boundsError = validateSegmentBounds({
+    startMs,
+    endMs,
+    durationMs,
+    segmentType: type,
+    isMovie: segment.season == null && segment.episode == null,
+  });
   if (boundsError) return apiError(boundsError, 422);
 
   // The edited range can't overlap another of this user's own submissions
@@ -129,7 +135,11 @@ export async function PATCH(
       durationMs,
       excludeSegmentId: segment.id,
     },
-    { role: actor.user.role, reputation: actor.user.reputation },
+    {
+      id: actor.user.id,
+      role: actor.user.role,
+      reputation: actor.user.reputation,
+    },
   );
 
   await db
@@ -153,6 +163,7 @@ export async function PATCH(
     action: "edit",
     reason: decision.reasons.join("; "),
   });
+  await approveConfirmedPeers(decision, segment.id);
 
   return json({
     id: segment.id,

@@ -31,6 +31,26 @@ function delta(ms: number): string {
   return `${sign}${Math.abs(s).toFixed(1)}s`;
 }
 
+/**
+ * Public read endpoints of other skip databases, for manually cross-checking a
+ * submission. Opened as plain links (one per source, only when clicked) because
+ * both are rate limited — never fetched from our side.
+ */
+function compareLinks(i: QueueItem): { label: string; href: string }[] {
+  const imdb = encodeURIComponent(i.imdbId);
+  const ep = i.season != null ? `&season=${i.season}&episode=${i.episode}` : "";
+  return [
+    {
+      label: "TheIntroDB",
+      href: `https://api.theintrodb.org/v3/media?imdb_id=${imdb}${ep}`,
+    },
+    {
+      label: "IntroDB",
+      href: `https://api.introdb.app/segments?imdb_id=${imdb}${ep || "&is_movie=true"}`,
+    },
+  ];
+}
+
 export function AdminQueue({ initial }: { initial: QueueItem[] }) {
   const [items, setItems] = useState(initial);
   const [busy, setBusy] = useState<number | null>(null);
@@ -130,6 +150,24 @@ export function AdminQueue({ initial }: { initial: QueueItem[] }) {
                   "unknown"
                 )}{" "}
                 · {new Date(i.createdAt).toLocaleString()}
+              </p>
+              <p className="text-xs text-slate-500">
+                compare:{" "}
+                {compareLinks(i).map((l, idx) => (
+                  <span key={l.label}>
+                    {idx > 0 && " · "}
+                    {/* noreferrer + no-referrer: the other service sees no Referer and no window.opener */}
+                    <a
+                      href={l.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      referrerPolicy="no-referrer"
+                      className="text-slate-300 hover:underline"
+                    >
+                      {l.label} ↗
+                    </a>
+                  </span>
+                ))}
               </p>
             </div>
             <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
