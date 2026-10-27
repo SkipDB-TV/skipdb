@@ -14,7 +14,3 @@ enabled = true
 binding = "DB"
 database_name = "skipdb"
 database_id = "743dafdc-d9b8-4fa4-a458-2413f63b0ee3"
-
-[[kv_namespaces]]
-binding = "KV"
-id = "ade6575296194ad2bce66c633f7ead09"

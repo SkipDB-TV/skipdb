@@ -1,8 +1,10 @@
 # skipdb-worker
 
-Cloudflare Worker that serves `GET /api/segments` with a KV edge cache in front of a D1 database, and proxies all other `/api/*` requests to Vercel. Runs at Cloudflare's edge in 300+ locations.
+Cloudflare Worker that serves `GET /api/segments` with a per-colo edge cache (Workers Cache API) in front of a D1 database, and proxies all other `/api/*` requests to Vercel. Runs at Cloudflare's edge in 300+ locations.
 
-**Read path:** KV (sub-ms, edge-local) → D1 fallback on miss (first request per episode per day). KV is populated lazily and expires after 24h to stay in sync with the daily import. The `Server-Timing` response header shows `kv;dur=X` on cache hits and `d1;dur=X` on misses.
+**Read path:** Cache API (edge-local, free) → D1 fallback on miss. The cache is populated lazily per data centre and expires after 1h, so data is fresh soon after the daily import. The `Server-Timing` response header shows `cache;dur=X` on cache hits and `d1;dur=X` on misses.
+
+> KV was used here previously but was dropped: KV writes are billed beyond 1M/month and the D1 fallback made them redundant.
 
 ---
 
@@ -38,28 +40,7 @@ database_name = "skipdb"
 database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"   # ← paste here
 ```
 
-### 3. Create the KV namespace
-
-```sh
-pnpm wrangler kv namespace create skipdb-cache
-```
-
-This prints something like:
-
-```
-✅ Created KV namespace 'skipdb-cache'
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-```
-
-Paste that `id` into `wrangler.toml`:
-
-```toml
-[[kv_namespaces]]
-binding = "KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"   # ← paste here
-```
-
-### 4. Apply the schema to the remote database
+### 3. Apply the schema to the remote database
 
 ```sh
 pnpm wrangler d1 execute skipdb --remote --file=schema.sql
@@ -67,7 +48,7 @@ pnpm wrangler d1 execute skipdb --remote --file=schema.sql
 
 > **Note:** Wrangler v4 defaults to local mode — `--remote` is required to target the live D1 database.
 
-### 5. Create a `.env` file for the import script
+### 4. Create a `.env` file for the import script
 
 ```sh
 cp .env.example .env
@@ -81,7 +62,7 @@ Fill in the values:
 | `IMPORT_CF_DATABASE_ID` | The UUID printed in step 2, or `pnpm wrangler d1 list`                                                                                                                                       |
 | `IMPORT_CF_API_TOKEN`   | [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) → "Create Token" → use the **"Edit Cloudflare Workers"** template, then add **D1 Edit** permission |
 
-### 6. Run the initial full import
+### 5. Run the initial full import
 
 This downloads the dump from GitHub Releases and writes every episode to D1.
 
@@ -89,7 +70,7 @@ This downloads the dump from GitHub Releases and writes every episode to D1.
 pnpm d1:import:full
 ```
 
-### 7. Deploy the Worker
+### 6. Deploy the Worker
 
 ```sh
 pnpm deploy

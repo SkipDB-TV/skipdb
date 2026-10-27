@@ -15,8 +15,11 @@ const CORS = {
 
 interface Env {
   DB: D1Database;
-  KV: KVNamespace;
 }
+
+// Per-colo edge cache TTL for raw episode data. The Cache API is free (unlike KV writes),
+// so a short TTL keeps data fresh after the daily import at negligible D1 cost.
+const CACHE_TTL_S = 3600;
 
 interface RequestParams {
   imdbId: string;
@@ -27,7 +30,7 @@ interface RequestParams {
   types: readonly SegmentType[];
 }
 
-interface KVEntry {
+interface CacheEntry {
   segments: StoredSegment[];
   intro_length_estimate_ms: number | null;
 }
@@ -99,7 +102,7 @@ export default {
       return new Response(null, { status: 204, headers: CORS });
     }
 
-    // GET/HEAD /api/segments → race KV + D1, return fastest
+    // GET/HEAD /api/segments → edge cache, falling back to D1
     if (
       (request.method === "GET" || request.method === "HEAD") &&
       url.pathname === "/api/segments"
@@ -154,60 +157,56 @@ async function handleSegments(
   const key = episodeKey(params.imdbId, params.season, params.episode);
   const t0 = performance.now();
 
-  // Race KV and D1 simultaneously — return whichever has data first.
-  // A KV miss (null) is treated as a non-resolution so D1 can still win.
-  // KV is usually quicker but it seems replication is worse, so sometimes D1 actually wins
-  // We request KV anyway and it has lower limits than D1, so the extra D1 request makes no difference
-  const session = env.DB.withSession("first-unconstrained");
+  // Cache the raw episode data (not the response) since duration/adjust/type vary per request.
+  // The Cache API is per-colo and free; D1 remains the source of truth.
+  const cache = caches.default;
+  const cacheKey = new Request(
+    `${url.origin}/__cache/segments/${encodeURIComponent(key)}`,
+  );
 
-  const kvPromise = env.KV.get(key)
-    .then((v): { source: "kv"; raw: string } | Promise<never> =>
-      v !== null ? { source: "kv", raw: v } : new Promise(() => {}),
-    )
-    .catch((): Promise<never> => new Promise(() => {}));
-
-  const d1Promise = session
-    .prepare(
-      "SELECT segments, intro_length_estimate_ms FROM episodes WHERE key = ?",
-    )
-    .bind(key)
-    .first<{ segments: string; intro_length_estimate_ms: number | null }>()
-    .then((row) => ({ source: "d1" as const, row }));
-
-  const result = await Promise.race([kvPromise, d1Promise]);
-  const durMs = performance.now() - t0;
-
-  if (result.source === "kv") {
-    const { segments, intro_length_estimate_ms } = JSON.parse(
-      result.raw,
-    ) as KVEntry;
+  const cached = await cache.match(cacheKey).catch(() => undefined);
+  if (cached) {
+    const { segments, intro_length_estimate_ms } =
+      (await cached.json()) as CacheEntry;
     return segmentsResponse(
       params,
       segments,
       intro_length_estimate_ms,
-      `kv;dur=${durMs}`,
+      `cache;dur=${performance.now() - t0}`,
     );
   }
 
-  // D1 won — write to KV in the background after returning the response.
-  // TODO: also write to KV during import for changed episodes so data is fresh immediately after import, then no need to expire.
-  const { row } = result;
+  const row = await env.DB.withSession("first-unconstrained")
+    .prepare(
+      "SELECT segments, intro_length_estimate_ms FROM episodes WHERE key = ?",
+    )
+    .bind(key)
+    .first<{ segments: string; intro_length_estimate_ms: number | null }>();
+  const durMs = performance.now() - t0;
+
   const rawSegments: StoredSegment[] | null = row
     ? JSON.parse(row.segments)
     : null;
 
   if (rawSegments) {
     ctx.waitUntil(
-      env.KV.put(
-        key,
-        JSON.stringify({
-          segments: rawSegments,
-          intro_length_estimate_ms: row!.intro_length_estimate_ms,
-        } satisfies KVEntry),
-        { expirationTtl: 86400 },
-      ).catch(() => {
-        // KV write limit exceeded or other error — D1 remains the source of truth
-      }),
+      cache
+        .put(
+          cacheKey,
+          new Response(
+            JSON.stringify({
+              segments: rawSegments,
+              intro_length_estimate_ms: row!.intro_length_estimate_ms,
+            } satisfies CacheEntry),
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "Cache-Control": `public, max-age=${CACHE_TTL_S}`,
+              },
+            },
+          ),
+        )
+        .catch(() => {}),
     );
   }
 
